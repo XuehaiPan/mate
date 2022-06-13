@@ -1,0 +1,16 @@
+\begin{tikzpicture}
+  \draw[fill={green!30},xshift=-0.5cm,yshift=-0.5cm]         (0,0) rectangle (9,1);
+  \draw[fill={green!50!gray!50},xshift=-0.5cm,yshift=-0.5cm] (6,0) rectangle (9,1);
+  \draw[step=1.0cm,xshift=-0.5cm,yshift=-0.5cm]              (0,0) grid (9,1);
+  \node            at (0,0) {$x$};
+  \node            at (1,0) {$y$};
+  \node            at (2,0) {$r$};
+  \node[rotate=45] at (3,0) {\scriptsize $R_s \cos \phi$};
+  \node[rotate=45] at (4,0) {\scriptsize $R_s \sin \phi$};
+  \node            at (5,0) {$\theta$};
+  \node[rotate=45] at (6,0) {\scriptsize $R_{s,\max}$};
+  \node[rotate=45] at (7,0) {\scriptsize ${\Delta \phi}_{\max}$};
+  \node[rotate=45] at (8,0) {\scriptsize ${\Delta \theta}_{\max}$};
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm]        (0,1) -- (6,1) node[midway,yshift=0.6cm]  {\scriptsize \textbf{Public} State ($6$ elements)};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] (0,0) -- (9,0) node[midway,yshift=-0.6cm] {\scriptsize \textbf{Private} State ($9$ elements)};
+\end{tikzpicture}

@@ -1,0 +1,21 @@
+\begin{tikzpicture}
+  \draw[fill={white},thick,dotted] (0,0) circle(5);
+  \draw[fill={green!20},opacity=0.7,thick]   (15:4) -- (0,0) -- (105:4) arc (105:15:4) -- cycle;
+  \draw[fill={blue!70!red!30!}]              (0,0) circle(0.4) node[left,xshift=-0.5cm,yshift=0.15cm] {Camera};
+  \draw[fill={white},opacity=0.75,rotate=60] (0.32,0.24) -- (-0.32,0.24) -- (-0.32,-0.24) -- (0.32,-0.24) -- cycle;
+  \draw[fill={black},opacity=0.75,rotate=60] (0.28,0.12) -- (0.48,0.12) -- (0.48,-0.12) -- (0.28,-0.12) -- cycle;
+  \draw[dashed]                              (60:1.5) -- (60:6);
+  \draw[dashed]                              (5,0)    -- (6,0);
+  \draw[->,thick]                            (-10,-6) -- (6,-6);
+  \draw[->,thick]                            (-8,-7)  -- (-8,6);
+
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm}] (0,0) -- (105:4) node[midway,xshift=-0.6cm,yshift=-0.15cm] {$R_s$};
+  \draw[|<->|,rotate=-30] (-0.4,-0.7) -- (0.4,-0.7) node[midway,xshift=-0.2cm,yshift=-0.4cm] {$2 r$};
+  \draw[->,dashed]        (0,0)       -- (-45:5)    node[left,pos=0.7]                       {$R_{s,\max}$};
+  \draw[|<->|]            (0:5.5) arc (0:60:5.5)    node[midway,xshift=0.2cm,yshift=0.4cm]   {$\phi$};
+  \draw[<->]              (15:0.8) arc (15:105:0.8) node[above,pos=0.4]                      {$\theta$};
+
+  \node[xshift=-0.5cm,yshift=-0.5cm] at (-8,-6) {$O$};
+  \draw[dashed] (0,-5) -- (0,-6) node[below] {$x$};
+  \draw[dashed] (-5,0) -- (-8,0) node[left]  {$y$};
+\end{tikzpicture}

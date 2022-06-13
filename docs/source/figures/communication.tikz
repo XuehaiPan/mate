@@ -1,0 +1,83 @@
+\begin{tikzpicture}
+  \pgfmathsetmacro{\B}{-1}
+
+  \draw[fill={red!30},opacity=0.05,dashed]   (-1,\B-6) rectangle (2,3);
+  \draw[fill={cyan!30},opacity=0.15,dashed]  (2,\B-6)  rectangle (7,3);
+  \draw[fill={lime!30},opacity=0.15,dashed]  (7,\B-6)  rectangle (17,3);
+  \draw[fill={brown!30},opacity=0.15,dashed] (17,\B-6) rectangle (27,3);
+  \draw[fill={red!30},opacity=0.15,dashed]   (27,\B-6) rectangle (32,3);
+  \draw[fill={cyan!30},opacity=0.05,dashed]  (32,\B-6) rectangle (35,3);
+
+  \draw[dashed,double] (2,\B-6) -- (2,3);
+  \draw[dashed,double] (32,\B-6) -- (32,3);
+
+  \draw[fill={green!20},opacity=0.9,rounded corners=10,thick] (0,0) rectangle (4,2);
+  \draw (2,1.5) node {environment};
+  \draw[fill={yellow!30},opacity=0.9,rounded corners=10,thick] (0.5,0.2) rectangle (3.5,1) node[pos=0.5] {channel};
+
+  \draw[fill={green!20},opacity=0.9,rounded corners=10,thick] (10,0) rectangle (14,2);
+  \draw (12,1.5) node {environment};
+  \draw[fill={yellow!30},opacity=0.9,rounded corners=10,thick] (10.5,0.2) rectangle (13.5,1) node[pos=0.5] {channel};
+
+  \draw[fill={green!20},opacity=0.9,rounded corners=10,thick] (20,0) rectangle (24,2);
+  \draw (22,1.5) node {environment};
+  \draw[fill={yellow!30},opacity=0.9,rounded corners=10,thick] (20.5,0.2) rectangle (23.5,1) node[pos=0.5] {channel};
+
+  \draw[fill={green!20},opacity=0.9,rounded corners=10,thick] (30,0) rectangle (34,2);
+  \draw (32,1.5) node {environment};
+  \draw[fill={yellow!30},opacity=0.9,rounded corners=10,thick] (30.5,0.2) rectangle (33.5,1) node[pos=0.5] {channel};
+
+  \draw[fill={blue!30},opacity=0.9,rounded corners=10,thick] (6,\B)   rectangle (8,\B-1) node[pos=0.5] {agent $i$};
+  \draw[fill={blue!30},opacity=0.9,rounded corners=10,thick] (6,\B-2) rectangle (8,\B-3) node[pos=0.5] {agent $j$};
+  \draw[fill={blue!30},opacity=0.9,rounded corners=10,thick] (6,\B-4) rectangle (8,\B-5) node[pos=0.5] {agent $k$};
+
+  \draw[->,thick] (4,1) .. controls (5,1) and (5,\B-0.5) .. (6,\B-0.5)   node[pos=1,yshift=-0.25cm,anchor=east] {$o_i$};
+  \draw[->,thick] (4,1) .. controls (5,1) and (4.5,\B-2.5) .. (6,\B-2.5) node[pos=1,yshift=-0.25cm,anchor=east] {$o_j$};
+  \draw[->,thick] (4,1) .. controls (5,1) and (4,\B-4.5) .. (6,\B-4.5)   node[pos=1,yshift=-0.25cm,anchor=east] {$o_k$};
+
+  \draw[->]       (8,\B-0.5) .. controls (9,\B-0.5) and (9.5,0.6) .. (10.5,0.6)   node[pos=0.025,yshift=0.75cm,anchor=west]  {$m_{ij}$};
+  \draw[->,thick] (8,\B-0.5) .. controls (9,\B-0.5) and (9.5,0.6) .. (10.5,0.6)   node[pos=0.025,yshift=-0.25cm,anchor=west] {$m_{ik}$};
+  \draw[->,thick] (8,\B-2.5) .. controls (9.5,\B-2.5) and (9.5,0.6) .. (10.5,0.6) node[pos=0.025,yshift=-0.25cm,anchor=west] {$m_{jk}$};
+
+  \draw[fill={blue!30},opacity=0.9,rounded corners=10,thick] (16,\B)   rectangle (18,\B-1) node[pos=0.5] {agent $i$};
+  \draw[fill={blue!30},opacity=0.9,rounded corners=10,thick] (16,\B-2) rectangle (18,\B-3) node[pos=0.5] {agent $j$};
+  \draw[fill={blue!30},opacity=0.9,rounded corners=10,thick] (16,\B-4) rectangle (18,\B-5) node[pos=0.5] {agent $k$};
+
+  \draw[->,thick] (13.5,0.6) .. controls (14.5,0.6) and (14.5,\B-2.5) .. (16,\B-2.5) node[pos=1,yshift=-0.25cm,anchor=east] {$m_{ij}$};
+  \draw[->,thick] (13.5,0.6) .. controls (14.5,0.6) and (14,\B-4.5) .. (16,\B-4.5)   node[pos=1,yshift=-0.25cm,anchor=east] {$m_{ik}, m_{jk}$};
+
+  \draw (17,\B-1.45) node {$o_i$};
+  \draw (17,\B-3.45) node {$o_j$};
+  \draw (17,\B-5.45) node {$o_k$};
+
+  \draw[->,thick] (18,\B-4.5) .. controls (20,\B-4.5) and (19.5,0.6) .. (20.5,0.6) node[pos=0.05,yshift=-0.1cm,anchor=west] {$m_k$ (broadcast)};
+
+  \draw[fill={blue!30},opacity=0.9,rounded corners=10,thick] (26,\B)   rectangle (28,\B-1) node[pos=0.5] {agent $i$};
+  \draw[fill={blue!30},opacity=0.9,rounded corners=10,thick] (26,\B-2) rectangle (28,\B-3) node[pos=0.5] {agent $j$};
+  \draw[fill={blue!30},opacity=0.9,rounded corners=10,thick] (26,\B-4) rectangle (28,\B-5) node[pos=0.5] {agent $k$};
+
+  \draw[->,thick] (23.5,0.6) .. controls (24.5,0.6) and (25,\B-0.5) .. (26,\B-0.5)   node[pos=1,yshift=-0.25cm,anchor=east] {$m_{k}$};
+  \draw[->,thick] (23.5,0.6) .. controls (24.5,0.6) and (24.5,\B-2.5) .. (26,\B-2.5) node[pos=1,yshift=-0.25cm,anchor=east] {$m_{k}$};
+  \draw[->,thick] (23.5,0.6) .. controls (24.5,0.6) and (24,\B-4.5) .. (26,\B-4.5)   node[pos=1,yshift=-0.25cm,anchor=east] {$m_{k}$};
+
+  \draw (27,\B-1.45) node {$o_i$};
+  \draw (27,\B-3.45) node {$o_j, m_{ij}$};
+  \draw (27,\B-5.45) node {$o_k, m_{ik}, m_{jk}$};
+
+  \draw[->,thick] (28,\B-0.5) .. controls (29,\B-0.5) and (29,1) .. (30,1)   node[pos=0.025,yshift=-0.25cm,anchor=west] {$a_i$};
+  \draw[->,thick] (28,\B-2.5) .. controls (29.5,\B-2.5) and (29,1) .. (30,1) node[pos=0.025,yshift=-0.25cm,anchor=west] {$a_j$};
+  \draw[->,thick] (28,\B-4.5) .. controls (30,\B-4.5) and (29,1) .. (30,1)   node[pos=0.025,yshift=-0.25cm,anchor=west] {$a_k$};
+
+  \draw[|->|,thick] (2,3) -- (32,3)        node[midway,yshift=0.4cm]  {environment step};
+  \draw[|->|,thick] (2,\B-6) -- (7,\B-6)   node[midway,yshift=-0.4cm] {observe};
+  \draw[|->|,thick] (7,\B-6) -- (17,\B-6)  node[midway,yshift=-0.4cm] {send / receive messages (round 1)};
+  \draw[|->|,thick] (17,\B-6) -- (27,\B-6) node[midway,yshift=-0.4cm] {send / receive messages (round 2)};
+  \draw[|->|,thick] (27,\B-6) -- (32,\B-6) node[midway,yshift=-0.4cm] {act};
+
+  \draw[->,thick]  (-1,1) -- (0,1);
+  \draw[->,thick]  (34,1) -- (35,1);
+  \draw[->|,thick] (-1,3) -- (2,3)        node[midway,yshift=0.4cm]  {previous step};
+  \draw[|->,thick] (32,3) -- (35,3)       node[midway,yshift=0.4cm]  {next step};
+  \draw[->|,thick] (-1,\B-6) -- (2,\B-6)  node[midway,yshift=-0.4cm] {previous step};
+  \draw[|->,thick] (32,\B-6) -- (35,\B-6) node[midway,yshift=-0.4cm] {next step};
+\end{tikzpicture}

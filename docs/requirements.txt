@@ -1,0 +1,6 @@
+sphinx
+sphinx-autobuild
+sphinx-copybutton
+sphinxcontrib-tikz
+sphinx-rtd-theme
+rstcheck

@@ -1,0 +1,52 @@
+name: MultiAgentTracking(4v8, 9)
+max_episode_steps: 10000           # int in [0, +inf)
+num_cargoes_per_target: 8          # int in [4, +inf)
+high_capacity_target_split: 0.5    # float in [0.0, 1.0]
+targets_start_with_cargoes: true   # bool (true / false)
+bounty_factor: 1.0                 # float in [0.0, +inf)
+shuffle_entities: true             # bool (true / false)
+reward_type: dense                 # literal (dense / sparse)
+
+camera:
+  location_random_range:  # 4 cameras
+    - [  500,  800,  500,  800 ]   # [ x_low, x_high, y_low, y_high ] : 4 floats in [-1000.0, +1000.0]
+    - [  500,  800, -800, -500 ]
+    - [ -800, -500, -800, -500 ]
+    - [ -800, -500,  500,  800 ]
+
+  min_viewing_angle: 30.0          # float in (0.0, 180.0] (in degree)
+  max_sight_range: 1500.0          # float in (radius, +inf)
+  rotation_step: 5.0               # float in (0.0, +inf)
+  zooming_step: 2.5                # float in (0.0, +inf)
+  radius: 40.0                     # float in [0.0, +1000.0)
+
+target:
+  location_random_range:  # 8 targets
+    - [ -200,  200, -200,  200 ]   # [ x_low, x_high, y_low, y_high ] : 4 floats in [-1000.0, +1000.0]
+    - [ -200,  200, -200,  200 ]
+    - [ -200,  200, -200,  200 ]
+    - [ -200,  200, -200,  200 ]
+    - [ -200,  200, -200,  200 ]
+    - [ -200,  200, -200,  200 ]
+    - [ -200,  200, -200,  200 ]
+    - [ -200,  200, -200,  200 ]
+
+  step_size: 20.0                  # float in (0.0, +inf)
+  sight_range: 500.0               # float in (0.0, +inf)
+
+obstacle:
+  location_random_range:  # 9 obstacles
+    - [  200,  800,  200,  800 ]   # [ x_low, x_high, y_low, y_high ] : 4 floats in [-1000.0, +1000.0]
+    - [  200,  800, -800, -200 ]
+    - [ -800, -200, -800, -200 ]
+    - [ -800, -200,  200,  800 ]
+
+    - [  900,  900, -500,  500 ]
+    - [ -500,  500,  900,  900 ]
+    - [ -900, -900, -500,  500 ]
+    - [ -500,  500, -900, -900 ]
+
+    - [ -200,  200, -200,  200 ]
+
+  radius_random_range: [ 25.0, 100.0 ]  # [ r_low, r_high ] : 2 floats in [0.0, +1000.0]
+  transmittance: 0.1                    # float in [0.0, 1.0]

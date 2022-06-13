@@ -1,0 +1,12 @@
+\begin{tikzpicture}
+  \draw[fill={gray!10}] (-3,-2) rectangle (3,2);
+  \draw[->,thick]       (-4.5,0) -- (4.5,0) node[below] {$\Delta \phi$};
+  \draw[->,thick]       (0,-3)   -- (0,3)   node[right] {$\Delta \theta$};
+
+  \node[above,xshift=0.5cm]  at (3,0)  {\scriptsize ${\Delta \phi}_{\max}$};
+  \node[below,xshift=-0.6cm] at (-3,0) {\scriptsize $-{\Delta \phi}_{\max}$};
+  \node[above,xshift=0.5cm]  at (0,2)  {\scriptsize ${\Delta \theta}_{\max}$};
+  \node[below,xshift=-0.6cm] at (0,-2) {\scriptsize $-{\Delta \theta}_{\max}$};
+
+  \draw[->] (-2.5,2.5) arc (90:30:2) node[near start,xshift=-1.75cm,yshift=0.125cm] {\small valid actions};
+\end{tikzpicture}

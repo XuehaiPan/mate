@@ -1,0 +1,23 @@
+\begin{tikzpicture}
+  \draw[fill={yellow!30},xshift=-0.5cm,yshift=-0.5cm]         (0,0) rectangle (14,1);
+  \draw[fill={yellow!50!gray!50},xshift=-0.5cm,yshift=-0.5cm] (4,0) rectangle (14,1);
+  \draw[step=1.0cm,xshift=-0.5cm,yshift=-0.5cm]               (0,0) grid      (14,1);
+  \node at (0,0)  {$x$};
+  \node at (1,0)  {$y$};
+  \node at (2,0)  {$R_s$};
+  \node at (3,0)  {\scalebox{0.75}{$\text{loaded}$}};
+  \node at (4,0)  {$v_{\max}$};
+  \node at (5,0)  {\scalebox{0.9}{$W_{\max}$}};
+  \node at (6,0)  {$W^{(0)}$};
+  \node at (7,0)  {$W^{(1)}$};
+  \node at (8,0)  {$W^{(2)}$};
+  \node at (9,0)  {$W^{(3)}$};
+  \node at (10,0) {$E^{(0)}$};
+  \node at (11,0) {$E^{(1)}$};
+  \node at (12,0) {$E^{(2)}$};
+  \node at (13,0) {$E^{(3)}$};
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm]        (0,1)  -- (4,1)  node[midway,yshift=0.6cm]  {\scriptsize \textbf{Public} State ($4$ elements)};
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm]        (6,1)  -- (10,1) node[midway,yshift=0.6cm]  {\scriptsize Goal Bits ($N_{\mathcal{W}}$ elements)};
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm]        (10,1) -- (14,1) node[midway,yshift=0.6cm]  {\scriptsize Empty Bits ($N_{\mathcal{W}}$ elements)};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] (0,0)  -- (14,0) node[midway,yshift=-0.6cm] {\scriptsize \textbf{Private} State ($14$ elements)};
+\end{tikzpicture}

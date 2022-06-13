@@ -1,0 +1,55 @@
+\begin{tikzpicture}
+  \pgfmathsetmacro{\L}{5}
+  \pgfmathsetmacro{\Lm}{\L - 1}
+  \pgfmathsetmacro{\D}{\Lm / 2}
+  \pgfmathsetmacro{\R}{1.5 * \D}
+  \pgfmathsetmacro{\Ds}{\D * \D}
+  \pgfmathsetmacro{\Rs}{\R * \R}
+
+  \draw[dashed]         (-\R,-\R) rectangle (\R,\R);
+  \draw[fill={gray!10}] (0,0)     circle(\R);
+  \draw[->,thick]       ({-\R -1.5},0) -- ({\R + 1.5},0) node[below] {$v_x$};
+  \draw[->,thick]       (0,{-\R - 1})  -- (0,{\R + 1})   node[right] {$v_y$};
+
+  \node[below,xshift=-0.5cm] at (\R,0)  {\scriptsize $v_{\max}$};
+  \node[below,xshift=-0.6cm] at (-\R,0) {\scriptsize $-v_{\max}$};
+  \node[below,xshift=0.5cm]  at (0,\R)  {\scriptsize $v_{\max}$};
+  \node[below,xshift=-0.6cm] at (0,-\R) {\scriptsize $-v_{\max}$};
+
+  \draw[->] ({-\R - 1},-2.2) arc (-90:-45:3) node[near start,xshift=-2.7cm,yshift=-0.01cm] {\small valid continuous actions};
+  \draw[->] ({-\R - 1},{2 * \R / sqrt(\Ds + 4)}) -- ({-\R * \D / sqrt(\Ds + 4) - 0.25},{2 * \R / sqrt(\Ds + 4)}) node[near start,xshift=-1.4cm,yshift=0.05cm] {\small discretized};
+  \node at (0,{-\R - 1.5}) {\small \texttt{DiscreteTarget(env, levels=\L)}};
+
+  \foreach \i in {0,...,\Lm} {
+    \foreach \j in {0,...,\Lm} {
+      \pgfmathsetmacro{\x}{(2 * \i / \Lm - 1)};
+      \pgfmathsetmacro{\y}{(2 * \j / \Lm - 1)};
+      \pgfmathsetmacro{\angle}{atan2(\x, \y)};
+      \pgfmathsetmacro{\bound}{1 / max(abs(cos(\angle)), abs(sin(\angle)))};
+      \pgfmathtruncatemacro{\label}{\i + \L * \j};
+      \draw[fill={green!20}] ({\R * \x / \bound},{\R * \y / \bound}) circle(0.1) node[xshift=0.3cm,yshift=0.3cm] {\scriptsize \label};
+    }
+  }
+
+  \draw[fill={gray!10}] (\R+4-1,2.5-1)     rectangle (\R+4+1,2.5+1);
+  \draw[fill={gray!30}] (\R+4-2/3,2.5-2/3) rectangle (\R+4+2/3,2.5+2/3);
+  \draw[fill={gray!50}] (\R+4-1/3,2.5-1/3) rectangle (\R+4+1/3,2.5+1/3);
+
+  \draw[dashed] (\R+3,-3.5) rectangle (\R+5,-1.5);
+  \draw[fill={gray!10}] (\R+4,-2.5) circle(1);
+  \draw[fill={gray!30}] (\R+4,-2.5) circle(2/3);
+  \draw[fill={gray!50}] (\R+4,-2.5) circle(1/3);
+
+  \draw[->,thick] (\R+4,1.25) -- (\R+4,-1.25) node[midway,rotate=90,yshift=0.35cm] {\footnotesize shrink radially};
+
+  \foreach \i in {0,...,6} {
+    \foreach \j in {0,...,6} {
+      \pgfmathsetmacro{\x}{2 * (\i / 6) - 1};
+      \pgfmathsetmacro{\y}{2 * (\j / 6) - 1};
+      \pgfmathsetmacro{\angle}{atan2(\x, \y)};
+      \pgfmathsetmacro{\bound}{1 / max(abs(cos(\angle)), abs(sin(\angle)))};
+      \draw[fill={red!20}]   ({\R + 4 + \x},{2.5 + \y})                    circle(0.05);
+      \draw[fill={green!20}] ({\R + 4 + \x / \bound},{-2.5 + \y / \bound}) circle(0.05);
+    }
+  }
+\end{tikzpicture}

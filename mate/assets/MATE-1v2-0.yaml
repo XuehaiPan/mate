@@ -1,0 +1,26 @@
+name: MultiAgentTracking(1v2, 0)
+max_episode_steps: 10000
+num_cargoes_per_target: 8
+high_capacity_target_split: 0.5
+targets_start_with_cargoes: true
+bounty_factor: 1.0
+shuffle_entities: true
+reward_type: dense
+
+camera:
+  location:  # 1 cameras
+    - [ 0,  0 ]
+
+  min_viewing_angle: 30.0
+  max_sight_range: 1500.0
+  rotation_step: 5.0
+  zooming_step: 2.5
+  radius: 40.0
+
+target:
+  location_random_range:  # 2 targets
+    - [ -200,  200, -200,  200 ]
+    - [ -200,  200, -200,  200 ]
+
+  step_size: 20.0
+  sight_range: 500.0

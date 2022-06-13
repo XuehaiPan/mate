@@ -1,0 +1,7 @@
+\begin{tikzpicture}
+  \draw[fill={blue!30},xshift=-0.5cm,yshift=-0.5cm] (0,0) rectangle (3,1);
+  \draw[step=1.0cm,xshift=-0.5cm,yshift=-0.5cm]     (0,0) grid (3,1);
+  \node at (0,0) {$x$};
+  \node at (1,0) {$y$};
+  \node at (2,0) {$r$};
+\end{tikzpicture}

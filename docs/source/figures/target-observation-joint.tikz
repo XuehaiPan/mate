@@ -1,0 +1,136 @@
+\begin{tikzpicture}
+  \pgfmathtruncatemacro{\Dpsrv}{11}
+  \pgfmathtruncatemacro{\Dtprv}{14}
+  \pgfmathtruncatemacro{\Dtpub}{4}
+  \pgfmathtruncatemacro{\Dcpub}{6}
+  \pgfmathtruncatemacro{\Do}{3}
+  \pgfmathtruncatemacro{\Ot}{\Dpsrv}
+  \pgfmathtruncatemacro{\Oc}{\Ot+\Dtprv}
+  \pgfmathtruncatemacro{\Oo}{\Oc+2*(\Dcpub+2)}
+  \pgfmathtruncatemacro{\Ott}{\Oo+2*(\Do+2)}
+  \pgfmathtruncatemacro{\L}{\Ott+2*(\Dtpub+2)}
+  \pgfmathtruncatemacro{\Lm}{\L-1}
+
+  \draw[fill={white},xshift=-0.5cm,yshift=-0.5cm]             (0,0)              rectangle ({\L},4);
+  \draw[fill={yellow!30},xshift=-0.5cm,yshift=-0.5cm]         ({\Ot},0)          rectangle ({\Oc},4);
+  \draw[fill={green!30},xshift=-0.5cm,yshift=-0.5cm]          ({\Oc},0)          rectangle ({\Oc+\Dcpub},4);
+  \draw[fill={green!30!gray!30},xshift=-0.5cm,yshift=-0.5cm]  ({\Oc+\Dcpub},0)   rectangle ({\Oc+\Dcpub+1},4);
+  \draw[fill={green!30},xshift=-0.5cm,yshift=-0.5cm]          ({\Oo-\Dcpub-1},0) rectangle ({\Oo-1},4);
+  \draw[fill={green!30!gray!30},xshift=-0.5cm,yshift=-0.5cm]  ({\Oo-1},0)        rectangle ({\Oo},4);
+  \draw[fill={blue!30},xshift=-0.5cm,yshift=-0.5cm]           ({\Oo},0)          rectangle ({\Oo+\Do},4);
+  \draw[fill={blue!30!gray!30},xshift=-0.5cm,yshift=-0.5cm]   ({\Oo+\Do},0)      rectangle ({\Oo+\Do+1},4);
+  \draw[fill={blue!30},xshift=-0.5cm,yshift=-0.5cm]           ({\Ott-\Do-1},0)   rectangle ({\Ott-1},4);
+  \draw[fill={blue!30!gray!30},xshift=-0.5cm,yshift=-0.5cm]   ({\Ott-1},0)       rectangle ({\Ott},4);
+  \draw[fill={yellow!30},xshift=-0.5cm,yshift=-0.5cm]         ({\Ott},0)         rectangle ({\Ott+\Dtpub},4);
+  \draw[fill={yellow!30!gray!30},xshift=-0.5cm,yshift=-0.5cm] ({\Ott+\Dtpub},0)  rectangle ({\Ott+\Dtpub+1},4);
+  \draw[fill={yellow!30},xshift=-0.5cm,yshift=-0.5cm]         ({\L-\Dtpub-1},0)  rectangle ({\L-1},4);
+  \draw[fill={yellow!30!gray!30},xshift=-0.5cm,yshift=-0.5cm] ({\L-1},0)         rectangle ({\L},4);
+  \draw[step=1.0cm,xshift=-0.5cm,yshift=-0.5cm]               (0,0)              grid      ({\L},4);
+
+  \foreach \x in {0,...,\Lm} {
+    \node at (\x,1) {$\vdots$};
+  }
+  \foreach \y in {0,2,3} {
+    \foreach \x in {\Oc,...,\Lm} {
+      \draw[fill={gray},opacity=0.4] ({\x-0.5},\y-0.2) -- ({\x+0.2},\y+0.5) -- ({\x-0.5},\y+0.5) -- cycle;
+      \node at ({\x-0.275},\y+0.275) {\scalebox{0.65}{$0$}};
+    }
+    \draw[fill={white},xshift=-0.5cm,yshift=-0.5cm]     (6,\y)     rectangle (8,\y+1);
+    \draw[fill={yellow!30},xshift=-0.5cm,yshift=-0.5cm] ({\Ot},\y) rectangle ({\Oc},\y+1);
+    \node at (0,\y)   {$N_{\mathcal{C}}$}; \node at (1,\y) {$N_{\mathcal{T}}$}; \node at (2,\y) {$N_{\mathcal{O}}$};
+    \node at (4,\y)   {$x^{(0)}_w$}; \node at (5,\y) {$y^{(0)}_w$};
+    \node at (6.5,\y) {$\cdots$};
+    \node at (8,\y)   {\scalebox{0.65}{$x^{(N_{\mathcal{W}} - 1)}_w$}}; \node at (9,\y) {\scalebox{0.65}{$y^{(N_{\mathcal{W}} - 1)}_w$}};
+    \node at (10,\y)  {$r_w$};
+
+    \node            at ({\Oc+0.1},\y-0.1)   {\scalebox{0.8}{$x_c^{(0)}$}};
+    \node            at ({\Oc+1+0.1},\y-0.1) {\scalebox{0.8}{$y_c^{(0)}$}};
+    \node            at ({\Oc+2+0.1},\y-0.1) {\scalebox{0.8}{$r_c^{(0)}$}};
+    \node[rotate=45] at ({\Oc+3},\y)         {\scalebox{0.5}{$R_{s,c}^{(0)} \cos \phi^{(0)}$}};
+    \node[rotate=45] at ({\Oc+4},\y)         {\scalebox{0.5}{$R_{s,c}^{(0)} \cos \phi^{(0)}$}};
+    \node            at ({\Oc+5+0.1},\y-0.1) {\scalebox{0.8}{$\theta^{(0)}$}};
+    \node            at ({\Oc+6+0.1},\y-0.1) {$1$};
+
+    \draw[fill={white},xshift=-0.5cm,yshift=-0.5cm] ({\Oc+\Dcpub+1},\y) rectangle ({\Oo-\Dcpub-1},\y+1);
+    \node at ({\Oc+\Dcpub+1.5},\y) {$\cdots$};
+
+    \node            at ({\Oo-7+0.1},\y-0.1) {\scalebox{0.6}{$x_c^{(N_{\mathcal{C}} - 1)}$}};
+    \node            at ({\Oo-6+0.1},\y-0.1) {\scalebox{0.6}{$y_c^{(N_{\mathcal{C}} - 1)}$}};
+    \node            at ({\Oo-5+0.1},\y-0.1) {\scalebox{0.6}{$r_c^{(N_{\mathcal{C}} - 1)}$}};
+    \node[rotate=45] at ({\Oo-4},\y)         {\scalebox{0.35}{$R_{s,c}^{(N_{\mathcal{C}} - 1)} \cos \phi^{(N_{\mathcal{C}} - 1)}$}};
+    \node[rotate=45] at ({\Oo-3},\y)         {\scalebox{0.35}{$R_{s,c}^{(N_{\mathcal{C}} - 1)} \cos \phi^{(N_{\mathcal{C}} - 1)}$}};
+    \node            at ({\Oo-2+0.1},\y-0.1) {\scalebox{0.6}{$\theta^{(N_{\mathcal{C}} - 1)}$}};
+    \node            at ({\Oo-1+0.1},\y-0.1) {$1$};
+
+    \node at ({\Oo+0.1},\y-0.1)   {\scalebox{0.8}{$x_o^{(0)}$}};
+    \node at ({\Oo+1+0.1},\y-0.1) {\scalebox{0.8}{$y_o^{(0)}$}};
+    \node at ({\Oo+2+0.1},\y-0.1) {\scalebox{0.8}{$r_o^{(0)}$}};
+    \node at ({\Oo+3+0.1},\y-0.1) {$1$};
+
+    \draw[fill={white},xshift=-0.5cm,yshift=-0.5cm] ({\Oo+\Do+1},\y) rectangle ({\Ott-\Do-1},\y+1);
+    \node at ({\Oo+\Do+1.5},\y) {$\cdots$};
+
+    \node at ({\Ott-4+0.1},\y-0.1) {\scalebox{0.6}{$x_o^{(N_{\mathcal{O}} - 1)}$}};
+    \node at ({\Ott-3+0.1},\y-0.1) {\scalebox{0.6}{$y_o^{(N_{\mathcal{O}} - 1)}$}};
+    \node at ({\Ott-2+0.1},\y-0.1) {\scalebox{0.6}{$r_o^{(N_{\mathcal{O}} - 1)}$}};
+    \node at ({\Ott-1+0.1},\y-0.1) {$1$};
+
+    \node            at ({\Ott+0.1},\y-0.1)   {\scalebox{0.8}{$x_t^{(0)}$}};
+    \node            at ({\Ott+1+0.1},\y-0.1) {\scalebox{0.8}{$y_t^{(0)}$}};
+    \node            at ({\Ott+2+0.1},\y-0.1) {\scalebox{0.8}{$R_{s,t}^{(0)}$}};
+    \node[rotate=45] at ({\Ott+3},\y)         {\scalebox{0.6}{$\text{loaded}_t^{(0)}$}};
+    \node            at ({\Ott+4+0.1},\y-0.1) {$1$};
+
+    \draw[fill={white},xshift=-0.5cm,yshift=-0.5cm] ({\Ott+\Dtpub+1},\y) rectangle ({\L-\Dtpub-1},\y+1);
+    \node at ({\Ott+\Dtpub+1.5},\y) {$\cdots$};
+
+    \node            at ({\L-5+0.1},\y-0.1) {\scalebox{0.6}{$x_t^{(N_{\mathcal{T}} - 1)}$}};
+    \node            at ({\L-4+0.1},\y-0.1) {\scalebox{0.6}{$y_t^{(N_{\mathcal{T}} - 1)}$}};
+    \node            at ({\L-3+0.1},\y-0.1) {\scalebox{0.55}{$R_{s,t}^{(N_{\mathcal{T}} - 1)}$}};
+    \node[rotate=45] at ({\L-2},\y)         {\scalebox{0.5}{$\text{loaded}_t^{(N_{\mathcal{T}} - 1)}$}};
+    \node            at ({\L-1+0.1},\y-0.1) {$1$};
+  }
+
+  \draw[fill={white},xshift=-0.5cm,yshift=-0.5cm] (6,1) rectangle (8,2);
+  \node at (6.5,1) {$\ddots$};
+
+  \draw[fill={white},xshift=-0.5cm,yshift=-0.5cm] ({\Oc+\Dcpub+1},1) rectangle ({\Oo-\Dcpub-1},2);
+  \node at ({\Oc+\Dcpub+1.5},1) {$\ddots$};
+
+  \draw[fill={white},xshift=-0.5cm,yshift=-0.5cm] ({\Oo+\Do+1},1) rectangle ({\Ott-\Do-1},2);
+  \node at ({\Oo+\Do+1.5},1) {$\ddots$};
+
+  \draw[fill={white},xshift=-0.5cm,yshift=-0.5cm] ({\Ott+\Dtpub+1},1) rectangle ({\L-\Dtpub-1},2);
+  \node at ({\Ott+\Dtpub+1.5},1) {$\ddots$};
+
+  \node at (3,0)                      {\scriptsize $N_{\mathcal{T}} - 1$};
+  \node at ({\Ot+0.5 * \Dtprv-0.5},0) {\scriptsize \textbf{Private} State of the $(N_{\mathcal{T}} - 1)$-th Target};
+  \node at (3,2)                      {$1$};
+  \node at ({\Ot+0.5 * \Dtprv-0.5},2) {\scriptsize \textbf{Private} State of the $1$-th Target};
+  \node at (3,3)                      {$0$};
+  \node at ({\Ot+0.5 * \Dtprv-0.5},3) {\scriptsize \textbf{Private} State of the $0$-th Target};
+
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] (0,0)  -- (0,4)         node[midway,rotate=90,yshift=0.6cm] {\scriptsize Joint over index $t$};
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] (0,4) -- ({\Ot},4)      node[midway,yshift=0.6cm] {\scriptsize Preserved Data};
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Ot},4) -- ({\Oc},4)  node[midway,yshift=0.6cm] {\scriptsize \textbf{Private} State of the Current Target};
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Oc},4) -- ({\Oo},4)  node[midway,yshift=0.6cm] {\scriptsize Masked \textbf{Public} States of Cameras with Additional Flags};
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Oo},4) -- ({\Ott},4) node[midway,yshift=0.6cm] {\scriptsize Masked States of Obstacles with Additional Flags};
+  \draw[decorate,decoration={brace,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Ott},4) -- ({\L},4)  node[midway,yshift=0.6cm] {\scriptsize Masked \textbf{Public} States of Targets with Additional Flags};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] (0,0) -- (3,0)                           node[midway,yshift=-0.6cm] {\scriptsize Entity Numbers};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] (3,0) -- (4,0)                           node[midway,yshift=-0.6cm] {\scriptsize index};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] (4,0) -- ({\Ot-1},0)                     node[midway,yshift=-0.6cm] {\scriptsize Locations of Warehouses};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Ot-1},0) -- ({\Ot},0)                 node[midway,yshift=-0.6cm] {\scriptsize Radius of Warehouses};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Oc},0) -- ({\Oc+\Dcpub},0)            node[midway,yshift=-0.6cm] {\scriptsize \textbf{Public} State of Camera $0$};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Oc+\Dcpub},0) -- ({\Oc+\Dcpub+1},0)   node[midway,yshift=-0.6cm] {\scriptsize flag};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Oo},0) -- ({\Oo+\Do},0)               node[midway,yshift=-0.6cm] {\scriptsize State of Obstacle $0$};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Oo+\Do},0) -- ({\Oo+\Do+1},0)         node[midway,yshift=-0.6cm] {\scriptsize flag};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Ott},0) -- ({\Ott+\Dtpub},0)          node[midway,yshift=-0.6cm] {\scriptsize \textbf{Public} State of Target $0$};
+  \draw[decorate,decoration={brace,mirror,amplitude=0.25cm,raise=0.1cm},xshift=-0.5cm,yshift=-0.5cm] ({\Ott+\Dtpub},0) -- ({\Ott+\Dtpub+1},0) node[midway,yshift=-0.6cm] {\scriptsize flag};
+
+  \draw[|<->|,xshift=-0.5cm,yshift=-0.5cm] ({\L+0.5},0) -- ({\L+0.5},4)  node[midway,xshift=0.6cm]  {$N_{\mathcal{T}}$};
+  \draw[|<->|,xshift=-0.5cm,yshift=-0.5cm] (0,-1.5) -- ({\Ot},-1.5)      node[midway,yshift=-0.6cm] {$D^{\text{psrv}} = 13$};
+  \draw[|<->|,xshift=-0.5cm,yshift=-0.5cm] ({\Ot},-1.5) -- ({\Oc},-1.5)  node[midway,yshift=-0.6cm] {$D_t^{\text{pvt}} = 14$};
+  \draw[|<->|,xshift=-0.5cm,yshift=-0.5cm] ({\Oc},-1.5) -- ({\Oo},-1.5)  node[midway,yshift=-0.6cm] {$(D_c^{\text{pub}} + 1) \times N_{\mathcal{C}} = 7 N_{\mathcal{C}}$};
+  \draw[|<->|,xshift=-0.5cm,yshift=-0.5cm] ({\Oo},-1.5) -- ({\Ott},-1.5) node[midway,yshift=-0.6cm] {$(D_o + 1) \times N_{\mathcal{O}} = 4 N_{\mathcal{O}}$};
+  \draw[|<->|,xshift=-0.5cm,yshift=-0.5cm] ({\Ott},-1.5) -- ({\L},-1.5)  node[midway,yshift=-0.6cm] {$(D_t^{\text{pub}} + 1) \times N_{\mathcal{T}} = 5 N_{\mathcal{T}}$};
+\end{tikzpicture}

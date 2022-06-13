@@ -1,0 +1,29 @@
+\begin{tikzpicture}
+  \pgfmathsetmacro{\L}{5}
+  \pgfmathsetmacro{\Lm}{\L - 1}
+  \pgfmathsetmacro{\D}{\Lm / 2}
+  \pgfmathsetmacro{\X}{2 * \D}
+  \pgfmathsetmacro{\Y}{1.5 * \D}
+
+  \draw[fill={gray!10}] (-\X,-\Y) rectangle (\X,\Y);
+  \draw[->,thick]       ({-\X - 1.5},0) -- ({\X + 1.5},0) node[below] {$\Delta \phi$};
+  \draw[->,thick]       (0,{-\Y - 1})   -- (0,{\Y + 1})   node[right] {$\Delta \theta$};
+
+  \node[below,xshift=-0.5cm] at (\X,0)  {\scriptsize ${\Delta \phi}_{\max}$};
+  \node[below,xshift=-0.6cm] at (-\X,0) {\scriptsize $-{\Delta \phi}_{\max}$};
+  \node[below,xshift=0.5cm]  at (0,\Y)  {\scriptsize ${\Delta \theta}_{\max}$};
+  \node[below,xshift=-0.6cm] at (0,-\Y) {\scriptsize $-{\Delta \theta}_{\max}$};
+
+  \draw[->] ({-1.35 * \X / \D},{\Y + 1}) arc (90:15:2) node[near start,xshift=-2.8cm,yshift=0.15cm] {\small valid continuous actions};
+  \draw[->] ({\X + 1.5},{\Y / \D}) -- ({\X + 0.25},{\Y / \D}) node[near start,xshift=1.35cm,yshift=0.05cm] {\small discretized};
+  \node at (0,{-\Y - 1.5}) {\small \texttt{DiscreteCamera(env, levels=\L)}};
+
+  \foreach \i in {0,...,\Lm} {
+    \foreach \j in {0,...,\Lm} {
+      \pgfmathsetmacro{\x}{(2 * \i / \Lm - 1) * \X};
+      \pgfmathsetmacro{\y}{(2 * \j / \Lm - 1) * \Y};
+      \pgfmathtruncatemacro{\label}{\i + \L * \j};
+      \draw[fill={green!20}] (\x,\y) circle(0.1) node[xshift=0.3cm,yshift=0.3cm] {\scriptsize \label};
+    }
+  }
+\end{tikzpicture}

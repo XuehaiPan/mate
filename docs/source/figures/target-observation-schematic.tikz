@@ -1,0 +1,32 @@
+\begin{tikzpicture}
+  \draw[fill={white},thick,dotted] (0,0) circle(4.5);
+
+  \draw[fill={green!20},opacity=0.7,thick,xshift=2.5cm,yshift=2cm]        (30:6) -- (0,0) -- (-60:6) arc (-60:30:6) -- cycle;
+  \draw[fill={cyan!20},opacity=0.7,thick,dashed,xshift=2.5cm,yshift=2cm]  (-15:{2 * cos(15)}) arc (-15:-45:{2 * cos(15)}) -- (-45:6) arc (-45:-15:6) -- cycle;
+  \draw[fill={yellow!90},xshift=2.5cm,yshift=2cm]                         (0,0) circle(0.4) node[above,yshift=0.5cm] {Camera 0};
+  \draw[fill={white},opacity=0.75,xshift=2.5cm,yshift=2cm,rotate=-15]     (0.32,0.24) -- (-0.32,0.24) -- (-0.32,-0.24) -- (0.32,-0.24) -- cycle;
+  \draw[fill={black},opacity=0.75,xshift=2.5cm,yshift=2cm,rotate=-15]     (0.28,0.12) -- (0.48,0.12) -- (0.48,-0.12) -- (0.28,-0.12) -- cycle;
+
+  \fill[fill={green!20},opacity=0.7,xshift=-2.25cm,yshift=4cm]            (45:{3/sqrt(1.5)}) -- (0,0) -- (180:{3/sqrt(1.5)}) arc (180:45:{3/sqrt(1.5)}) -- cycle;
+  \draw[opacity=0.7,thick,xshift=-2.25cm,yshift=4cm]                      (45:{3.5/sqrt(1.5)}) -- (0,0) -- (180:{3.5/sqrt(1.5)});
+  \draw[fill={yellow!90},xshift=-2.25cm,yshift=4cm]                       (0,0) circle(0.4) node[right,xshift=0.5cm] {Camera 1};
+  \draw[fill={yellow!90},xshift=-2.25cm,yshift=4cm]                       (170:{4/sqrt(1.5)}) node {$\dots$};
+  \draw[fill={yellow!90},xshift=-2.25cm,yshift=4cm]                       (55:{4/sqrt(1.5)}) node {$\dots$};
+  \draw[fill={white},opacity=0.75,xshift=-2.25cm,yshift=4cm,rotate=112.5] (0.32,0.24) -- (-0.32,0.24) -- (-0.32,-0.24) -- (0.32,-0.24) -- cycle;
+  \draw[fill={black},opacity=0.75,xshift=-2.25cm,yshift=4cm,rotate=112.5] (0.28,0.12) -- (0.48,0.12) -- (0.48,-0.12) -- (0.28,-0.12) -- cycle;
+
+  \draw[fill={green!20},opacity=0.7,thick,xshift=-8cm]                    (20:9) -- (0,0) -- (-20:9) arc (-20:20:9) -- cycle;
+  \draw[fill={red!90},xshift=-8cm]                                        (0,0) circle(0.4) node[above,yshift=0.5cm] {Camera 2};
+  \draw[fill={white},opacity=0.75,xshift=-8cm]                            (0.32,0.24) -- (-0.32,0.24) -- (-0.32,-0.24) -- (0.32,-0.24) -- cycle;
+  \draw[fill={black},opacity=0.75,xshift=-8cm]                            (0.28,0.12) -- (0.48,0.12) -- (0.48,-0.12) -- (0.28,-0.12) -- cycle;
+
+  \draw[fill={blue!70!red!30!}] (0,0) circle(0.15) node[left,xshift=-0.2cm]         {Target};
+  \draw[fill={yellow!90}] (-0.5,-3.5) circle(0.15) node[right,xshift=0.2cm]         {Target $t'$};
+  \draw[fill={red!90}] (3,4) circle(0.15)          node[right,xshift=0.2cm]         {Target $t''$};
+  \draw[->,dashed] (0,0) -- (-135:4.5)             node[below,pos=0.8,xshift=0.3cm] {$R_s$};
+
+  \draw[fill={black!30}]                         (1.2,1)     circle(0.75)          node[left,xshift=-0.6cm,yshift=0.6cm] {Obstacle 0};
+  \draw[fill={black!30},xshift=2.5cm,yshift=2cm] (-30:2)     circle({2 * sin(15)}) node[right,xshift=0.2cm,yshift=0.8cm] {Obstacle 1};
+  \draw[fill={black!30}]                         (4,-3)      circle(1)             node[below,yshift=-1.1cm]             {Obstacle 2};
+  \draw[fill={black!70}]                         (-5.5,-2.5) circle(0.5)           node[below,yshift=-0.6cm]             {Obstacle 3};
+\end{tikzpicture}

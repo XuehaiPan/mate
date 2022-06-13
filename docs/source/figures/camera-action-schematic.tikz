@@ -1,0 +1,16 @@
+\begin{tikzpicture}
+  \draw[fill={green!20},opacity=0.7,thick] (0,0) -- (45:2) arc (45:135:2) -- cycle;
+  \draw[fill={blue!70!red!30!}]            (0,0) circle(0.1);
+
+  \draw[fill={green!20},opacity=0.7,thick,xshift=6cm] (0,0) -- (75:{2 * sqrt(3)}) arc (75:105:{2 * sqrt(3)}) -- cycle;
+  \draw[dashed,opacity=0.4,xshift=6cm]                (0,0) -- (45:2) arc (45:135:2) -- cycle;
+  \draw[fill={blue!70!red!30!},xshift=6cm]            (0,0) circle(0.1);
+
+  \draw[fill={green!20},opacity=0.7,thick,xshift=-6cm] (0,0) -- (15:{2 / sqrt(5 / 3)}) arc (15:165:{2 / sqrt(5 / 3)}) -- cycle;
+  \draw[dashed,opacity=0.4,xshift=-6cm]                (0,0) -- (45:2) arc (45:135:2) -- cycle;
+  \draw[fill={blue!70!red!30!},xshift=-6cm]            (0,0) circle(0.1);
+
+  \draw[<->,dashed] (70:2.5) arc (70:110:2.5) node[midway,yshift=0.5cm] {rotate};
+  \draw[->,dashed] (-2,1) -- (-4,1) node[midway,yshift=0.5cm] {zoom out};
+  \draw[->,dashed] (2,1)  -- (4,1)  node[midway,yshift=0.5cm] {zoom in};
+\end{tikzpicture}
