@@ -54,7 +54,7 @@ config = {
     'env': 'mate-mappo.target',
     'env_config': {
         'env_id': 'MultiAgentTracking-v0',
-        'config': 'MATE-4v8-0.yaml',
+        'config': 'MATE-2v4-0.yaml',
         'config_overrides': {'reward_type': 'dense'},
         'discrete_levels': 5,
         'frame_skip': 10,
