@@ -13,7 +13,7 @@ git config --global core.symlinks true  # required on Windows
 pip3 install git+https://github.com/XuehaiPan/mate.git#egg=mate
 ```
 
-**NOTE:** Python 3.7+ is required, and Python versions lower than 3.5 is not supported.
+**NOTE:** Python 3.7+ is required, and Python versions lower than 3.7 is not supported.
 
 It is highly recommended to create a new isolated virtual environment for `MATE` using [`conda`](https://docs.conda.io/en/latest/miniconda.html):
 
