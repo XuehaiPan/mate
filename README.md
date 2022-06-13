@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable html -->
 
-This repo contains the source code of `MATE`, the _**M**ulti-**A**gent **T**racking **E**nvironment_.
+This repo contains the source code of `MATE`, the _**M**ulti-**A**gent **T**racking **E**nvironment_. The full documentation can be found at <https://mate-gym.readthedocs.io>.
 
 This is an **asymmetric two-team zero-sum stochastic game** with _partial observations_, and each team has multiple agents (multiplayer). Intra-team communications are allowed, but inter-team communications are prohibited. It is **cooperative** among teammates, but it is **competitive** among teams (opponents).
 
