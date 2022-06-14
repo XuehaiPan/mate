@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable html -->
 
-This repo contains the source code of `MATE`, the _**M**ulti-**A**gent **T**racking **E**nvironment_. The full documentation can be found at <https://mate-gym.readthedocs.io>.
+This repo contains the source code of `MATE`, the _**M**ulti-**A**gent **T**racking **E**nvironment_. The full documentation can be found at <https://mate-gym.readthedocs.io>. The full list of implemented agents can be found in section [Implemented Algorithms](#implemented-algorithms).
 
 This is an **asymmetric two-team zero-sum stochastic game** with _partial observations_, and each team has multiple agents (multiplayer). Intra-team communications are allowed, but inter-team communications are prohibited. It is **cooperative** among teammates, but it is **competitive** among teams (opponents).
 
@@ -335,28 +335,28 @@ env = mate.make('MultiAgentTracking-v0',
 
 The following algorithms are implemented in [`examples`](examples):
 
-- Rule-based:
+- **Rule-based:**
 
-  1. Random
-  2. Naive
-  3. Greedy
-  4. Heuristic
+  1. **Random** (source: [`mate/agents/random.py`](mate/agents/random.py))
+  2. **Naive** (source: [`mate/agents/naive.py`](mate/agents/naive.py))
+  3. **Greedy** (source: [`mate/agents/greedy.py`](mate/agents/greedy.py))
+  4. **Heuristic** (source: [`mate/agents/heuristic.py`](mate/agents/heuristic.py))
 
-- Multi-Agent Reinforcement Learning Algorithms:
+- **Multi-Agent Reinforcement Learning Algorithms:**
 
-  1. IQL
-  1. QMIX
-  1. MADDPG (MA-TD3)
-  1. IPPO
-  1. MAPPO
+  1. **IQL** (<https://arxiv.org/abs/1511.08779>)
+  1. **QMIX** (<https://arxiv.org/abs/1803.11485>)
+  1. **MADDPG** (MA-TD3) (<https://arxiv.org/abs/1706.02275>)
+  1. **IPPO** (<https://arxiv.org/abs/2011.09533>)
+  1. **MAPPO** (<https://arxiv.org/abs/2103.01955>)
 
-- Multi-Agent Reinforcement Learning Algorithms with Multi-Agent Communication:
+- _Multi-Agent Reinforcement Learning Algorithms_ with **Multi-Agent Communication:**
 
-  1. TarMAC (IPPO)
-  1. TarMAC (MAPPO)
-  1. I2C (MAPPO)
+  1. **TarMAC** (base algorithm: IPPO) (<https://arxiv.org/abs/1810.11187>)
+  1. **TarMAC** (base algorithm: MAPPO)
+  1. **I2C** (base algorithm: MAPPO) (<https://arxiv.org/abs/2006.06455>)
 
-- Population Based Adversarial Policy Learning, available meta-solvers:
+- **Population Based Adversarial Policy Learning**, available meta-solvers:
 
   1. Self-Play (SP)
   1. Fictitious Play (FP)
