@@ -41,7 +41,7 @@ except ImportError:
 SCALE = mate.TERRAIN_SIZE
 BASE_CONFIG_FILE = mate.DEFAULT_CONFIG_FILE
 
-MAX_ITERATIONS = 1200
+MAX_ITERATIONS = 2000
 NUM_MESHES = 100
 
 
@@ -68,15 +68,14 @@ def generate(path, num_cameras, num_targets, num_obstacles,
         path
     ))
 
+    mate.seed_everything(seed)
+
     MESH_NUMPY = np.stack(np.meshgrid(np.linspace(start=-1.0, stop=+1.0, num=NUM_MESHES + 1, endpoint=True),
                                       np.linspace(start=-1.0, stop=+1.0, num=NUM_MESHES + 1, endpoint=True)),
                           axis=-1).reshape(-1, 2)
     MESH = torch.FloatTensor(MESH_NUMPY[:, np.newaxis, :])
     if torch.cuda.is_available():
         MESH = MESH.cuda()
-
-    np.random.seed(seed)
-    torch.manual_seed(seed)
 
     if num_cameras > 0:
         locations = 2.0 * torch.rand((num_cameras, 2), dtype=torch.float64) - 1.0
@@ -86,9 +85,9 @@ def generate(path, num_cameras, num_targets, num_obstacles,
         locations.requires_grad_()
 
         optimizer = optim.Adam([locations], lr=1E-2)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1,
-                                                         threshold=1E-3, threshold_mode='rel',
-                                                         patience=10, cooldown=5, verbose=True)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.25,
+                                                         threshold=1E-2, threshold_mode='rel',
+                                                         patience=16, cooldown=8, verbose=True)
 
         if plot:
             fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(14, 6))
@@ -125,11 +124,16 @@ def generate(path, num_cameras, num_targets, num_obstacles,
                     pbar.set_postfix({'radius': f'{SCALE * max_distance_numpy:.5f}'})
                     max_distances.append(SCALE * max_distance_numpy)
 
-                    if plot:
+                    if plot and i % 5 == 0:
                         if i == 0:
+                            ax1.set_title(f'{num_cameras} Camera{"s" if num_cameras > 1 else ""}')
                             ax1.set_aspect('equal', 'box')
-                            ax1.set_xlim(-1.25, 1.25)
-                            ax1.set_ylim(-1.25, 1.25)
+                            ax1.set_xlim(left=-1.25, right=1.25)
+                            ax1.set_ylim(bottom=-1.25, top=1.25)
+                            ax1.set_xticks([-1.0, -0.5, 0.0, +0.5, +1.0])
+                            ax1.set_xticklabels(['-1000', '-500', '0', '+500', '+1000'])
+                            ax1.set_yticks([-1.0, -0.5, 0.0, +0.5, +1.0])
+                            ax1.set_yticklabels(['-1000', '-500', '0', '+500', '+1000'])
                             line, = ax1.plot([0, 0], [0, 0], linestyle='--', color='black')
                             for location in locations_numpy:
                                 c = plt.Circle(location, radius=max_distance_numpy, zorder=2, fill=False)
@@ -153,9 +157,10 @@ def generate(path, num_cameras, num_targets, num_obstacles,
                         line.set_data([max_center[0], max_point[0]], [max_center[1], max_point[1]])
                         ax2.clear()
                         ax2.plot(max_distances)
-                        ax2.set_ylim(0.0, 1.2 * max_distances[0])
+                        ax2.set_xlim(left=0.0)
+                        ax2.set_ylim(bottom=0.0, top=1.2 * max_distances[0])
                         ax2.set_title(fr'Radius ($r = {SCALE * max_distance_numpy:.5f}$)')
-                        ax2.set_xlabel('step')
+                        ax2.set_xlabel('iteration')
                         ax2.set_ylabel('radius')
 
                         plt.pause(0.01)
@@ -175,8 +180,8 @@ def generate(path, num_cameras, num_targets, num_obstacles,
         max_distance_numpy = 0.0
         locations_numpy = np.zeros([num_cameras, 2])
 
-    max_distance_numpy = float(max_distance_numpy)
-    locations_numpy = np.asarray(locations_numpy, dtype=np.float64).tolist()
+    max_distance_numpy = SCALE * float(max_distance_numpy)
+    locations_numpy = (SCALE * np.asarray(locations_numpy, dtype=np.float64)).tolist()
 
     with open(BASE_CONFIG_FILE, mode='rt', encoding='UTF-8') as file:
         config = yaml.load(file, yaml.SafeLoader)
@@ -187,9 +192,9 @@ def generate(path, num_cameras, num_targets, num_obstacles,
     if num_cameras > 0:
         config['camera']['location_random_range'] = []
         for x, y in locations_numpy:
-            config['camera']['location_random_range'].append([SCALE * (x - 0.02), SCALE * (x + 0.02),
-                                                              SCALE * (y - 0.02), SCALE * (y + 0.02)])
-        config['camera']['max_sight_range'] = 2.0 * SCALE * max_distance_numpy
+            config['camera']['location_random_range'].append([x - 0.02 * SCALE, x + 0.02 * SCALE,
+                                                              y - 0.02 * SCALE, y + 0.02 * SCALE])
+        config['camera']['max_sight_range'] = 2.0 * max_distance_numpy
         config['camera']['radius'] = min(config['camera']['radius'], 0.1 * config['camera']['max_sight_range'])
     else:
         del config['camera']
@@ -202,7 +207,7 @@ def generate(path, num_cameras, num_targets, num_obstacles,
 
         radius_random_range_min, radius_random_range_max = config['obstacle']['radius_random_range']
         radius_random_range_max = min(max(3.0 * radius_random_range_min,
-                                          0.15 * SCALE * max_distance_numpy),
+                                          0.15 * max_distance_numpy),
                                       radius_random_range_max)
         config['obstacle']['radius_random_range'] = [radius_random_range_min, radius_random_range_max]
         config['obstacle']['transmittance'] = obstacle_transmittance
@@ -219,6 +224,9 @@ def generate(path, num_cameras, num_targets, num_obstacles,
             json.dump(config, file, indent=2)
         else:
             yaml.dump(config, file, yaml.SafeDumper, indent=2)
+
+    if fig is not None:
+        fig.savefig(path[:-len(file_ext)] + '.png')
 
 
 def main():
