@@ -170,7 +170,7 @@ class I2CModel(TorchRNN, nn.Module):
         )
 
         self.joint_q_network = SimpleMLP(
-            name='joint_advantage',
+            name='joint_q_value',
             input_dim=self.global_state_dim + self.action_dim + self.others_joint_action_dim,
             hidden_dims=self.critic_hiddens,
             output_dim=1,
