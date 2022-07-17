@@ -1,4 +1,5 @@
 --requirement ../requirements.txt
+--requirement ../mate/assets/requirements.txt
 
 sphinx
 sphinx-autobuild
