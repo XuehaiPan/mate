@@ -5,7 +5,6 @@
 import copy
 import itertools
 import os
-from abc import ABCMeta
 from collections import OrderedDict, defaultdict, deque
 from pathlib import Path
 from typing import List, Tuple, Iterable, Dict, Callable, Union, Optional, Any, TYPE_CHECKING
@@ -222,7 +221,7 @@ def validate_config(config: Dict[str, Any]) -> None:  # pylint: disable=too-many
                                      f'Got {config[entity][key]}.')
 
 
-class EnvMeta(ABCMeta):
+class EnvMeta(type(gym.Env)):
     """Helper metaclass for instance check."""
 
     def __instancecheck__(cls, instance):
