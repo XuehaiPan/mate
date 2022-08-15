@@ -6,7 +6,7 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.recurrent_net import RecurrentNetwork as TorchRNN
 from ray.rllib.utils.framework import try_import_torch
 
-from examples.utils import get_space_flat_size, SimpleRNN
+from examples.utils import SimpleRNN, get_space_flat_size
 
 
 torch, nn = try_import_torch()
@@ -26,7 +26,7 @@ class MAPPOModel(TorchRNN, nn.Module):
         critic_hiddens=None,
         critic_hidden_activation='relu',
         lstm_cell_size=256,
-        **kwargs
+        **kwargs,
     ):
         if actor_hiddens is None:
             actor_hiddens = [256, 256]
@@ -37,7 +37,9 @@ class MAPPOModel(TorchRNN, nn.Module):
         nn.Module.__init__(self)
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
 
-        assert hasattr(obs_space, 'original_space') and isinstance(obs_space.original_space, spaces.Dict)
+        assert hasattr(obs_space, 'original_space') and isinstance(
+            obs_space.original_space, spaces.Dict
+        )
         original_space = obs_space.original_space
         self.local_obs_space = original_space['obs']
         self.global_state_space = original_space['state']
@@ -49,15 +51,16 @@ class MAPPOModel(TorchRNN, nn.Module):
             self.has_action_mask = False
 
         self.flat_obs_dim = get_space_flat_size(self.obs_space)
-        self.space_dims = OrderedDict([
-            (key, get_space_flat_size(subspace))
-            for key, subspace in original_space.items()
-        ])
+        self.space_dims = OrderedDict(
+            [(key, get_space_flat_size(subspace)) for key, subspace in original_space.items()]
+        )
         indices = np.cumsum([0, *self.space_dims.values()])
-        self.flat_obs_slices = OrderedDict([
-            (key, slice(indices[i], indices[i + 1]))
-            for i, key in enumerate(self.space_dims.keys())
-        ])
+        self.flat_obs_slices = OrderedDict(
+            [
+                (key, slice(indices[i], indices[i + 1]))
+                for i, key in enumerate(self.space_dims.keys())
+            ]
+        )
 
         self.local_obs_dim = self.space_dims['obs']
         self.local_obs_slice = self.flat_obs_slices['obs']

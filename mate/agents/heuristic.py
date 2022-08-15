@@ -8,7 +8,7 @@ import numpy as np
 from mate.agents.base import CameraAgentBase
 from mate.agents.greedy import GreedyTargetAgent
 from mate.constants import MAX_CAMERA_VIEWING_ANGLE
-from mate.utils import polar2cartesian, sin_deg, normalize_angle, Vector2D
+from mate.utils import Vector2D, normalize_angle, polar2cartesian, sin_deg
 
 
 __all__ = ['HeuristicCameraAgent', 'HeuristicTargetAgent']
@@ -45,8 +45,10 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
 
         super().reset(observation)
 
-        results = self.calculate_scores(round(float(self.state.max_sight_range), 8),
-                                        round(float(self.state.min_viewing_angle), 8))
+        results = self.calculate_scores(
+            round(float(self.state.max_sight_range), 8),
+            round(float(self.state.min_viewing_angle), 8),
+        )
         self.state_mesh, self.coord_grid, self.scores = results
 
         self.camera_states = None
@@ -77,11 +79,12 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
 
         if None not in goal_state:
             goal_orientation, goal_viewing_angle = goal_state
-            action = np.asarray([
-                normalize_angle(goal_orientation - self.state.orientation),
-                goal_viewing_angle - self.state.viewing_angle
-            ]).clip(min=self.action_space.low,
-                    max=self.action_space.high)
+            action = np.asarray(
+                [
+                    normalize_angle(goal_orientation - self.state.orientation),
+                    goal_viewing_angle - self.state.viewing_angle,
+                ]
+            ).clip(min=self.action_space.low, max=self.action_space.high)
         else:
             if self.np_random.binomial(1, 0.1) != 0:
                 action = self.action_space.sample()
@@ -99,8 +102,7 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
         if self.index == self.controller_index:
             return []
 
-        request = self.pack_message(content=self.last_observation,
-                                    recipient=self.controller_index)
+        request = self.pack_message(content=self.last_observation, recipient=self.controller_index)
 
         return [request]
 
@@ -122,7 +124,9 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
         target_states = {}
         unsensed_targets = set(range(self.num_targets))
         for c, observation in self.joint_observation.items():
-            camera_state = self.STATE_CLASS(observation[self.observation_slices['self_state']], index=c)
+            camera_state = self.STATE_CLASS(
+                observation[self.observation_slices['self_state']], index=c
+            )
             self.camera_states[c] = camera_state
 
             for t in tuple(unsensed_targets):
@@ -133,7 +137,9 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
 
         target_states = list(target_states.values())
 
-        self.joint_goal_state = self.get_joint_goal_state(list(self.camera_states.values()), target_states)
+        self.joint_goal_state = self.get_joint_goal_state(
+            list(self.camera_states.values()), target_states
+        )
 
     def send_responses(self):
         """Prepare messages to communicate with other agents in the same team.
@@ -166,8 +172,11 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
         joint_tracked_bits = []
         num_within_range_targets = []
         for camera_state in camera_states:
-            within_range_targets = [ts for ts in target_states
-                                    if (ts - camera_state).norm <= camera_state.max_sight_range]
+            within_range_targets = [
+                ts
+                for ts in target_states
+                if (ts - camera_state).norm <= camera_state.max_sight_range
+            ]
             num_within_range_targets.append(len(within_range_targets))
 
             scores = np.zeros(self.scores.shape[-1], dtype=np.float64)
@@ -189,12 +198,18 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
             total_scores = 0
             total_cost = 0
             for c in permutation:
-                camera_state, scores, tracked_bits = camera_states[c], joint_scores[c], joint_tracked_bits[c]
+                camera_state, scores, tracked_bits = (
+                    camera_states[c],
+                    joint_scores[c],
+                    joint_tracked_bits[c],
+                )
                 untracked_bits = np.logical_and(tracked_bits, np.logical_not(current_tracked_bits))
                 index = np.argmax(scores + untracked_bits.sum(axis=-1))
 
-                state_diff = np.abs(self.state_mesh[index, :2] -
-                                    np.array([camera_state.orientation, camera_state.viewing_angle]))
+                state_diff = np.abs(
+                    self.state_mesh[index, :2]
+                    - np.array([camera_state.orientation, camera_state.viewing_angle])
+                )
                 cost = (state_diff / self.action_space.high).max()
 
                 current_tracked_bits = np.logical_or(current_tracked_bits, tracked_bits[index])
@@ -221,25 +236,33 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
         """Calculates the coordinate grid and the weighted scores."""
 
         state_mesh = np.stack(
-            np.meshgrid(np.linspace(start=-180.0, stop=+180.0,
-                                    num=36, endpoint=False),
-                        np.linspace(start=min_viewing_angle, stop=MAX_CAMERA_VIEWING_ANGLE,
-                                    num=21, endpoint=True)),
-            axis=-1
+            np.meshgrid(
+                np.linspace(start=-180.0, stop=+180.0, num=36, endpoint=False),
+                np.linspace(
+                    start=min_viewing_angle, stop=MAX_CAMERA_VIEWING_ANGLE, num=21, endpoint=True
+                ),
+            ),
+            axis=-1,
         ).reshape(-1, 2)
         sight_ranges = max_sight_range * np.sqrt(min_viewing_angle / state_mesh[..., 1])
         state_mesh = np.hstack([state_mesh, sight_ranges[:, np.newaxis]])
-        rho, phi = np.stack(
-            np.meshgrid(np.linspace(start=0.0, stop=max_sight_range,
-                                    num=41, endpoint=True),
-                        np.linspace(start=-180.0, stop=+180.0,
-                                    num=72, endpoint=False)),
-            axis=-1
-        ).reshape(-1, 2).transpose()
+        rho, phi = (
+            np.stack(
+                np.meshgrid(
+                    np.linspace(start=0.0, stop=max_sight_range, num=41, endpoint=True),
+                    np.linspace(start=-180.0, stop=+180.0, num=72, endpoint=False),
+                ),
+                axis=-1,
+            )
+            .reshape(-1, 2)
+            .transpose()
+        )
         coord_grid = polar2cartesian(rho, phi).transpose()
 
         scores = np.zeros((len(coord_grid), len(state_mesh)), dtype=np.float64)
-        for s, (orientation, viewing_angle, sight_range) in enumerate(state_mesh):  # pylint: disable=invalid-name
+        for s, (orientation, viewing_angle, sight_range) in enumerate(
+            state_mesh
+        ):  # pylint: disable=invalid-name
             half_viewing_angle = viewing_angle / 2.0
             if viewing_angle < 180.0:
                 dist_max = sight_range / (1.0 + 1.0 / sin_deg(half_viewing_angle))
@@ -284,16 +307,23 @@ class HeuristicTargetAgent(GreedyTargetAgent):
             direction = self.state - camera_state
             half_viewing_angle = camera_state.viewing_angle / 2.0
             angle_diff = normalize_angle(direction.angle - camera_state.orientation)
-            if direction.norm <= 1.2 * camera_state.sight_range and angle_diff <= 1.2 * half_viewing_angle:
-                center = Vector2D(norm=camera_state.sight_range / (1.0 + sin_deg(min(half_viewing_angle, 90.0))),
-                                  angle=camera_state.orientation,
-                                  origin=camera_state.location)
+            if (
+                direction.norm <= 1.2 * camera_state.sight_range
+                and angle_diff <= 1.2 * half_viewing_angle
+            ):
+                center = Vector2D(
+                    norm=camera_state.sight_range / (1.0 + sin_deg(min(half_viewing_angle, 90.0))),
+                    angle=camera_state.orientation,
+                    origin=camera_state.location,
+                )
                 inner_radius = camera_state.sight_range - center.norm
                 camera_centers.append((center, inner_radius))
 
         if len(camera_centers) > 0:
-            center, inner_radius = min(camera_centers,
-                                       key=lambda cr: np.linalg.norm(self.state.location - cr[0].endpoint) / cr[1])
+            center, inner_radius = min(
+                camera_centers,
+                key=lambda cr: np.linalg.norm(self.state.location - cr[0].endpoint) / cr[1],
+            )
 
             drift = self.state.location - center.endpoint
             drift_size = np.linalg.norm(drift)
@@ -301,7 +331,8 @@ class HeuristicTargetAgent(GreedyTargetAgent):
                 drift *= self.state.step_size * self.noise_scale / drift_size
 
             if np.dot(action, drift) >= 0.0:
-                action = (action + drift).clip(min=self.action_space.low,
-                                               max=self.action_space.high)
+                action = (action + drift).clip(
+                    min=self.action_space.low, max=self.action_space.high
+                )
 
         return action

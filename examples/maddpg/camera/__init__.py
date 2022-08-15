@@ -3,4 +3,5 @@
 from examples.maddpg.camera.agent import MADDPGCameraAgent
 from examples.maddpg.camera.config import config
 
+
 CameraAgent = MADDPGCameraAgent

@@ -3,4 +3,5 @@
 from examples.hrl.qmix.camera.agent import HRLQMIXCameraAgent
 from examples.hrl.qmix.camera.config import config
 
+
 CameraAgent = HRLQMIXCameraAgent

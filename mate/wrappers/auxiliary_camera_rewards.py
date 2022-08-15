@@ -1,14 +1,19 @@
 # pylint: disable=missing-module-docstring
 
-from typing import List, Tuple, Dict, Callable, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 import gym
 import numpy as np
 
-from mate.utils import sin_deg, polar2cartesian
+from mate.utils import polar2cartesian, sin_deg
 from mate.wrappers.repeated_reward_individual_done import RepeatedRewardIndividualDone
-from mate.wrappers.single_team import SingleTeamHelper, MultiTarget
-from mate.wrappers.typing import WrapperMeta, MultiAgentEnvironmentType, assert_multi_agent_environment
+from mate.wrappers.single_team import MultiTarget, SingleTeamHelper
+from mate.wrappers.typing import (
+    MultiAgentEnvironmentType,
+    WrapperMeta,
+    assert_multi_agent_environment,
+)
+
 
 try:
     from typing import Literal
@@ -29,7 +34,6 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
         - ``num_tracked`` (the higher the better): number of targets tracked the camera (shared, range in :math:`[0, N_{\mathcal{T}}]`).
         - ``baseline``: constant :math:`1`.
     """  # pylint: disable=line-too-long
-
     ACCEPTABLE_KEYS = (
         'raw_reward',           # team reward
         'coverage_rate',        # team reward
@@ -38,7 +42,7 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
         'soft_coverage_score',  # individual reward
         'num_tracked',          # individual reward
         'baseline',             # constant 1
-    )
+    )  # fmt: skip
     REDUCERS = {
         'mean': np.mean,
         'sum': np.sum,
@@ -46,9 +50,12 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
         'min': np.min,
     }
 
-    def __init__(self, env: MultiAgentEnvironmentType,
-                 coefficients: Dict[str, Union[float, Callable[[int, int, int, float, float], float]]],
-                 reduction: Literal['mean', 'sum', 'max', 'min', 'none'] = 'none') -> None:
+    def __init__(
+        self,
+        env: MultiAgentEnvironmentType,
+        coefficients: Dict[str, Union[float, Callable[[int, int, int, float, float], float]]],
+        reduction: Literal['mean', 'sum', 'max', 'min', 'none'] = 'none',
+    ) -> None:
         assert_multi_agent_environment(env)
         assert isinstance(env, RepeatedRewardIndividualDone), (
             f'You should use wrapper `{self.__class__}` with wrapper `RepeatedRewardIndividualDone`. '
@@ -59,10 +66,9 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
             f'You should not use wrapper `{self.__class__}` with wrapper `MultiTarget`. '
             f'Got env = {env}.'
         )
-        assert not isinstance(env, AuxiliaryCameraRewards), (
-            f'You should not use wrapper `{self.__class__}` more than once. '
-            f'Got env = {env}.'
-        )
+        assert not isinstance(
+            env, AuxiliaryCameraRewards
+        ), f'You should not use wrapper `{self.__class__}` more than once. Got env = {env}.'
         assert reduction in ('mean', 'sum', 'max', 'min', 'none'), (
             f'Invalid reduction method {reduction}. '
             f'The reduction method should be one of {("mean", "sum", "max", "min")} (for shared reward), '
@@ -80,9 +86,11 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
         for key, coefficient in coefficients.items():
             assert callable(coefficient) or isinstance(coefficient, (float, int)), (
                 f'The argument `coefficient` should be a callable function or a float number. '
-                f'Got coefficients[{key:!r}] = {coefficient:!r}.'
+                f'Got coefficients[{key!r}] = {coefficient!r}.'
             )
-            self.coefficients[key] = (coefficient if not isinstance(coefficient, int) else float(coefficient))
+            self.coefficients[key] = (
+                coefficient if not isinstance(coefficient, int) else float(coefficient)
+            )
 
         super().__init__(env)
         self.episode_id = -1
@@ -98,14 +106,18 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
 
         return self.env.reset(**kwargs)
 
-    def step(  # pylint: disable=too-many-locals,too-many-branches
-        self,
-        action: Union[Tuple[np.ndarray, np.ndarray], np.ndarray]
-    ) -> Union[Tuple[Tuple[np.ndarray, np.ndarray],
-                     Tuple[List[float], List[float]],
-                     Tuple[List[bool], List[bool]],
-                     Tuple[List[dict], List[dict]]],
-               Tuple[np.ndarray, List[float], List[bool], List[dict]]]:
+    # pylint: disable-next=too-many-locals,too-many-branches
+    def step(
+        self, action: Union[Tuple[np.ndarray, np.ndarray], np.ndarray]
+    ) -> Union[
+        Tuple[
+            Tuple[np.ndarray, np.ndarray],
+            Tuple[List[float], List[float]],
+            Tuple[List[bool], List[bool]],
+            Tuple[List[dict], List[dict]],
+        ],
+        Tuple[np.ndarray, List[float], List[bool], List[dict]],
+    ]:
 
         observations, rewards, dones, infos = self.env.step(action)
 
@@ -139,8 +151,13 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
             reward = 0.0
             for key, coefficient in self.coefficients.items():
                 if callable(coefficient):
-                    coefficient = coefficient(c, self.episode_id, self.episode_step,
-                                              raw_reward, auxiliary_rewards[key])
+                    coefficient = coefficient(
+                        c,
+                        self.episode_id,
+                        self.episode_step,
+                        raw_reward,
+                        auxiliary_rewards[key],
+                    )
                 reward += coefficient * auxiliary_rewards[key]
                 info.setdefault(key, auxiliary_rewards[key])
                 info[f'auxiliary_reward_{key}'] = auxiliary_rewards[key]
@@ -169,14 +186,15 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
         auxiliary_reward_matrix = np.zeros((env.num_cameras, env.num_targets), dtype=np.float64)
         for c, camera in enumerate(env.cameras):
             tracked_bits = env.camera_target_view_mask[c]
-            auxiliary_reward_matrix[c] = \
-                AuxiliaryCameraRewards.compute_soft_coverage_score(camera, env.targets,
-                                                                   tracked_bits)
+            auxiliary_reward_matrix[c] = AuxiliaryCameraRewards.compute_soft_coverage_score(
+                camera, env.targets, tracked_bits
+            )
 
         return auxiliary_reward_matrix
 
+    # pylint: disable-next=too-many-locals
     @staticmethod
-    def compute_soft_coverage_score(camera, targets, tracked_bits: np.ndarray) -> List[float]:  # pylint: disable=too-many-locals
+    def compute_soft_coverage_score(camera, targets, tracked_bits: np.ndarray) -> List[float]:
         """The soft coverage score is proportional to the distance from the target to the camera's boundary."""
 
         if camera.viewing_angle < 180.0:
@@ -192,9 +210,13 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
         rho_left, rho_right = rhos[0], rhos[-1]
 
         phis = np.concatenate([[phi_left] * 16, phis, [phi_right] * 16])
-        rhos = np.concatenate([np.linspace(start=0.0, stop=rho_left, num=16, endpoint=False),
-                               rhos,
-                               np.linspace(start=0.0, stop=rho_right, num=16, endpoint=False)])
+        rhos = np.concatenate(
+            [
+                np.linspace(start=0.0, stop=rho_left, num=16, endpoint=False),
+                rhos,
+                np.linspace(start=0.0, stop=rho_right, num=16, endpoint=False),
+            ]
+        )
 
         xs, ys = polar2cartesian(rhos, phis)  # pylint: disable=invalid-name
 
@@ -204,7 +226,7 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
             distances = np.hypot(direction.x - xs, direction.y - ys)
             dist = distances.min()
             if not tracked:
-                dist = - dist
+                dist = -dist
 
             auxiliary_reward = dist / dist_max
             auxiliary_rewards.append(auxiliary_reward)

@@ -11,15 +11,16 @@ import sys
 import numpy as np
 from gym import error
 
-if "Apple" in sys.version:
-    if "DYLD_FALLBACK_LIBRARY_PATH" in os.environ:
-        os.environ["DYLD_FALLBACK_LIBRARY_PATH"] += ":/usr/lib"
+
+if 'Apple' in sys.version:
+    if 'DYLD_FALLBACK_LIBRARY_PATH' in os.environ:
+        os.environ['DYLD_FALLBACK_LIBRARY_PATH'] += ':/usr/lib'
 
 try:
     import pyglet
 except ImportError as e:
     raise ImportError(
-        """
+        """\
     Cannot import pyglet.
     HINT: you can install pyglet directly via 'pip install pyglet'.
     But if you really just want to install all Gym dependencies and not have to think about it,
@@ -28,15 +29,15 @@ except ImportError as e:
     ) from e
 
 try:
-    from pyglet.gl import *  # pylint: disable=wildcard-import,unused-wildcard-import
+    from pyglet.gl import *
 except ImportError as e:
     raise ImportError(
-        """
+        """\
     Error occurred while running `from pyglet.gl import *`
     HINT: make sure you have OpenGL installed. On Ubuntu, you can run 'apt-get install python-opengl' or 'conda install libglu'.
     If you're running on a server, you may need a virtual frame buffer; something like this should work:
-    'xvfb-run -s \"-screen 0 1400x900x24\" python <your_script.py>'
-    """  # pylint: disable=line-too-long
+    'xvfb-run -s "-screen 0 1400x900x24" python <your_script.py>'
+    """
     ) from e
 
 
@@ -56,9 +57,7 @@ def get_display(spec):
     if isinstance(spec, str):
         return pyglet.canvas.Display(spec)
 
-    raise error.Error(
-        f"Invalid display specification: {spec}. (Must be a string like :0 or None.)"
-    )
+    raise error.Error(f'Invalid display specification: {spec}. (Must be a string like :0 or None.)')
 
 
 def get_window(width, height, display, **kwargs):
@@ -173,11 +172,9 @@ class Viewer:
 
     def get_array(self):
         self.window.flip()
-        image_data = (
-            pyglet.image.get_buffer_manager().get_color_buffer().get_image_data()
-        )
+        image_data = pyglet.image.get_buffer_manager().get_color_buffer().get_image_data()
         self.window.flip()
-        arr = np.fromstring(image_data.get_data(), dtype=np.uint8, sep="")
+        arr = np.fromstring(image_data.get_data(), dtype=np.uint8, sep='')
         arr = arr.reshape(self.height, self.width, 4)
         return arr[::-1, :, 0:3]
 
@@ -186,10 +183,10 @@ class Viewer:
 
 
 def _add_attrs(geom, attrs):
-    if "color" in attrs:
-        geom.set_color(*attrs["color"])
-    if "linewidth" in attrs:
-        geom.set_linewidth(attrs["linewidth"])
+    if 'color' in attrs:
+        geom.set_color(*attrs['color'])
+    if 'linewidth' in attrs:
+        geom.set_linewidth(attrs['linewidth'])
 
 
 class Geom:
@@ -230,9 +227,7 @@ class Transform(Attr):
 
     def enable(self):
         glPushMatrix()
-        glTranslatef(
-            self.translation[0], self.translation[1], 0
-        )  # translate to GL loc ppint
+        glTranslatef(self.translation[0], self.translation[1], 0)  # translate to GL loc ppint
         glRotatef(RAD2DEG * self.rotation, 0, 0, 1.0)
         glScalef(self.scale[0], self.scale[1], 1)
 
@@ -390,9 +385,7 @@ class Image(Geom):
         self.flip = False
 
     def render1(self):
-        self.img.blit(
-            -self.width / 2, -self.height / 2, width=self.width, height=self.height
-        )
+        self.img.blit(-self.width / 2, -self.height / 2, width=self.width, height=self.height)
 
 
 # ================================================================
@@ -434,9 +427,9 @@ class SimpleImageViewer:
             def on_close():
                 self.isopen = False
 
-        assert len(arr.shape) == 3, "You passed in an image with the wrong number shape"
+        assert len(arr.shape) == 3, 'You passed in an image with the wrong number shape'
         image = pyglet.image.ImageData(
-            arr.shape[1], arr.shape[0], "RGB", arr.tobytes(), pitch=arr.shape[1] * -3
+            arr.shape[1], arr.shape[0], 'RGB', arr.tobytes(), pitch=arr.shape[1] * -3
         )
         texture = image.get_texture()
         gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_NEAREST)
@@ -450,7 +443,7 @@ class SimpleImageViewer:
 
     def close(self):
         if self.isopen and sys.meta_path:
-            # ^^^ check sys.meta_path to avoid 'ImportError: sys.meta_path is None, Python is likely shutting down'
+            # Check sys.meta_path to avoid 'ImportError: sys.meta_path is None, Python is likely shutting down'
             self.window.close()
             self.isopen = False
 

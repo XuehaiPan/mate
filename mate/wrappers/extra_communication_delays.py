@@ -1,13 +1,13 @@
 # pylint: disable=missing-module-docstring
 
 import heapq
-from typing import Tuple, Iterable, Callable, Union
+from typing import Callable, Iterable, Tuple, Union
 
 import gym
 import numpy as np
 
 from mate.utils import Message
-from mate.wrappers.typing import WrapperMeta, MateEnvironmentType, assert_mate_environment
+from mate.wrappers.typing import MateEnvironmentType, WrapperMeta, assert_mate_environment
 
 
 class ExtraCommunicationDelays(gym.Wrapper, metaclass=WrapperMeta):
@@ -16,8 +16,11 @@ class ExtraCommunicationDelays(gym.Wrapper, metaclass=WrapperMeta):
     Users can use this wrapper to implement a communication channel with random delays.
     """
 
-    def __init__(self, env: MateEnvironmentType,
-                 delay: Union[int, Callable[[MateEnvironmentType, Message], int]] = 3) -> None:
+    def __init__(
+        self,
+        env: MateEnvironmentType,
+        delay: Union[int, Callable[[MateEnvironmentType, Message], int]] = 3,
+    ) -> None:
         assert_mate_environment(env)
         assert callable(delay) or (isinstance(delay, int) and delay > 0), (
             f'The argument `delay` should be a callable function or a constant positive integer. '
@@ -48,10 +51,9 @@ class ExtraCommunicationDelays(gym.Wrapper, metaclass=WrapperMeta):
             messages = (messages,)
 
         messages = list(messages)
-        assert len(set(m.team for m in messages)) <= 1, (
-            f'All messages must be from the same team. '
-            f'Got messages = {messages}.'
-        )
+        assert (
+            len(set(m.team for m in messages)) <= 1
+        ), f'All messages must be from the same team. Got messages = {messages}.'
 
         for message in messages:
             if callable(self.delay):

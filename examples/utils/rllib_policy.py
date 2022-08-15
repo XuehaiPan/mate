@@ -16,11 +16,16 @@ from mate.agents.base import AgentBase
 
 
 __all__ = [
-    'load_checkpoint', 'get_preprocessor', 'get_space_flat_size',
-    'DEFAULT_POLICY_ID', 'default_policy_mapping_fn',
-    'SHARED_POLICY_ID', 'shared_policy_mapping_fn',
+    'load_checkpoint',
+    'get_preprocessor',
+    'get_space_flat_size',
+    'DEFAULT_POLICY_ID',
+    'default_policy_mapping_fn',
+    'SHARED_POLICY_ID',
+    'shared_policy_mapping_fn',
     'independent_policy_mapping_fn',
-    'RLlibPolicyMixIn', 'RLlibGroupedPolicyMixIn',
+    'RLlibPolicyMixIn',
+    'RLlibGroupedPolicyMixIn',
 ]
 
 
@@ -129,14 +134,21 @@ class RLlibPolicyMixIn(AgentBase):
 
             self.preprocessor = get_preprocessor(dummy_env.observation_space)
 
-            policy = self.POLICY_CLASS(self.preprocessor.observation_space, dummy_env.action_space,
-                                       config=dict(self.config, num_gpus=0, num_gpus_per_worker=0))
+            policy = self.POLICY_CLASS(
+                self.preprocessor.observation_space,
+                dummy_env.action_space,
+                config=dict(self.config, num_gpus=0, num_gpus_per_worker=0),
+            )
 
         return policy
 
     def clone(self):
-        return self.__class__(config=self.config, checkpoint_path=self.checkpoint_path,
-                              make_env=self.make_env, seed=self.np_random.randint(np.iinfo(int).max))
+        return self.__class__(
+            config=self.config,
+            checkpoint_path=self.checkpoint_path,
+            make_env=self.make_env,
+            seed=self.np_random.randint(np.iinfo(int).max),
+        )
 
     def reset(self, observation):
         super().reset(observation)
@@ -159,19 +171,24 @@ class RLlibPolicyMixIn(AgentBase):
         preprocessed_observation = self.preprocess_raw_observation(observation)
 
         if not isinstance(self.preprocessor, NoPreprocessor):
-            dummy_preprocessed_observation = np.zeros(shape=self.preprocessor.observation_space.shape,
-                                                      dtype=self.preprocessor.observation_space.dtype)
-            dummy_preprocessed_observation[:preprocessed_observation.size] = preprocessed_observation.ravel()
+            dummy_preprocessed_observation = np.zeros(
+                shape=self.preprocessor.observation_space.shape,
+                dtype=self.preprocessor.observation_space.dtype,
+            )
+            dummy_preprocessed_observation[
+                : preprocessed_observation.size
+            ] = preprocessed_observation.ravel()
             return dummy_preprocessed_observation
         return preprocessed_observation.ravel()
 
     def compute_single_action(self, observation, state, info=None, deterministic=None):
         preprocessed_observation = self.preprocess_observation(observation)
 
-        explore = (not deterministic if deterministic is not None else None)
+        explore = not deterministic if deterministic is not None else None
 
-        results = self.policy.compute_single_action(preprocessed_observation, state=state,
-                                                    info=info, explore=explore)
+        results = self.policy.compute_single_action(
+            preprocessed_observation, state=state, info=info, explore=explore
+        )
         action, state, *_ = results
 
         if self.unsquash_action:
@@ -191,15 +208,19 @@ class RLlibPolicyMixIn(AgentBase):
         agent_id = agent_id or self.agent_id
 
         policy_id = self.policy_mapping_fn(agent_id)
-        policy_id = (policy_id if policy_id in self.worker['state'] else DEFAULT_POLICY_ID)
+        policy_id = policy_id if policy_id in self.worker['state'] else DEFAULT_POLICY_ID
 
         if self.policy_id is None or policy_id != self.policy_id:
             self.policy_id = policy_id
             self.policy.set_state(self.worker['state'][self.policy_id])
 
     def __reduce__(self):
-        return self.__class__, (self.config, self.checkpoint_path, self.make_env,
-                                self.np_random.randint(np.iinfo(int).max))
+        return self.__class__, (
+            self.config,
+            self.checkpoint_path,
+            self.make_env,
+            self.np_random.randint(np.iinfo(int).max),
+        )
 
 
 class RLlibGroupedPolicyMixIn(RLlibPolicyMixIn):
@@ -214,14 +235,18 @@ class RLlibGroupedPolicyMixIn(RLlibPolicyMixIn):
             self.grouped_observation_space = dummy_env.observation_space
             self.preprocessor = get_preprocessor(self.grouped_observation_space)
 
-            policy = self.POLICY_CLASS(dummy_env.observation_space, dummy_env.action_space,
-                                       config=dict(self.config, num_gpus=0, num_gpus_per_worker=0))
+            policy = self.POLICY_CLASS(
+                dummy_env.observation_space,
+                dummy_env.action_space,
+                config=dict(self.config, num_gpus=0, num_gpus_per_worker=0),
+            )
 
         return policy
 
     def compute_single_action(self, observation, state, info=None, deterministic=None):
-        dummy_joint_action, state = super().compute_single_action(observation, state=state,
-                                                                  info=info, deterministic=deterministic)
+        dummy_joint_action, state = super().compute_single_action(
+            observation, state=state, info=info, deterministic=deterministic
+        )
 
         action = dummy_joint_action[0]
         return action, state

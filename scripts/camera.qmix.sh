@@ -12,7 +12,7 @@
 #SBATCH --output        slurm-%j-%x.stdout.txt
 #SBATCH --error         slurm-%j-%x.stderr.txt
 
-### Print information ------------------------------------------------------------------------------
+# === Print information ============================================================================
 
 if [ -z "${BASH_VERSION:-}" ]; then
 	echo "Error: Bash is required to run this script." >&2
@@ -35,7 +35,7 @@ if [[ -n "${SLURM_JOB_ID:-}" ]]; then
 	seperator >&2
 fi
 
-### Setup environment ------------------------------------------------------------------------------
+# === Setup environment ============================================================================
 
 export CONDA_HOME="${HOME}/Miniconda3" # change to your conda prefix
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${CONDA_HOME}/lib"
@@ -47,7 +47,7 @@ if [[ -n "${WANDB_API_KEY:-}" && -x "$(command -v wandb)" ]]; then
 	wandb login --relogin "${WANDB_API_KEY}"
 fi
 
-### Jobs -------------------------------------------------------------------------------------------
+# === Jobs =========================================================================================
 
 python3 -m examples.qmix.camera.train \
 	--project mate-camera \

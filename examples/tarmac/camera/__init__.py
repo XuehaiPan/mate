@@ -3,4 +3,5 @@
 from examples.tarmac.camera.agent import TarMACCameraAgent
 from examples.tarmac.camera.config import config
 
+
 CameraAgent = TarMACCameraAgent

@@ -4,5 +4,6 @@ from examples.iql import camera, target
 from examples.iql.camera import IQLCameraAgent
 from examples.iql.target import IQLTargetAgent
 
+
 CameraAgent = IQLCameraAgent
 TargetAgent = IQLTargetAgent

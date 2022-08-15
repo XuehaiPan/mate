@@ -2,30 +2,48 @@
 
 # pylint: disable=missing-class-docstring,missing-function-docstring
 
-from typing import Tuple, Union, Optional
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from gym import spaces
 
-from mate.constants import (NUM_WAREHOUSES, PRESERVED_DIM,
-                            CAMERA_STATE_DIM_PRIVATE, CAMERA_STATE_DIM_PUBLIC,
-                            TARGET_STATE_DIM_PRIVATE, TARGET_STATE_DIM_PUBLIC,
-                            OBSTACLE_STATE_DIM,
-                            observation_space_of, observation_indices_of,
-                            observation_slices_of, coordinate_mask_of)
+from mate.constants import (
+    CAMERA_STATE_DIM_PRIVATE,
+    CAMERA_STATE_DIM_PUBLIC,
+    NUM_WAREHOUSES,
+    OBSTACLE_STATE_DIM,
+    PRESERVED_DIM,
+    TARGET_STATE_DIM_PRIVATE,
+    TARGET_STATE_DIM_PUBLIC,
+    coordinate_mask_of,
+    observation_indices_of,
+    observation_slices_of,
+    observation_space_of,
+)
 from mate.utils import Team, Vector2D
 
 
-__all__ = ['convert_coordinates',
-           'normalize_observation', 'rescale_observation',
-           'split_observation',
-           'CameraStatePublic', 'CameraStatePrivate',
-           'TargetStatePublic', 'TargetStatePrivate',
-           'ObstacleState']
+__all__ = [
+    'convert_coordinates',
+    'normalize_observation',
+    'rescale_observation',
+    'split_observation',
+    'CameraStatePublic',
+    'CameraStatePrivate',
+    'TargetStatePublic',
+    'TargetStatePrivate',
+    'ObstacleState',
+]
 
 
-def convert_coordinates(observation: np.ndarray,  # pylint: disable=too-many-locals
-                        team: Team, num_cameras: int, num_targets: int, num_obstacles: int) -> np.ndarray:
+# pylint: disable-next=too-many-locals
+def convert_coordinates(
+    observation: np.ndarray,
+    team: Team,
+    num_cameras: int,
+    num_targets: int,
+    num_obstacles: int,
+) -> np.ndarray:
     """Convert all locations of other entities in the observation to relative
     coordinates (exclude the current agent itself).
     """
@@ -36,7 +54,7 @@ def convert_coordinates(observation: np.ndarray,  # pylint: disable=too-many-loc
         f'Got observation.shape[-1] = {observation.shape[-1]}.'
     )
 
-    converted = observation[..., :observation_space.shape[-1]].copy()
+    converted = observation[..., : observation_space.shape[-1]].copy()
 
     slices = observation_slices_of(team, num_cameras, num_targets, num_obstacles)
     if team is Team.CAMERA:
@@ -46,31 +64,41 @@ def convert_coordinates(observation: np.ndarray,  # pylint: disable=too-many-loc
     opponent_view_mask = converted[..., slices['opponent_mask']].astype(np.bool8)
     obstacle_view_mask = converted[..., slices['obstacle_mask']].astype(np.bool8)
     teammate_view_mask = converted[..., slices['teammate_mask']].astype(np.bool8)
-    view_mask = np.hstack([
-        np.repeat(opponent_view_mask, repeats=opponent_state_dim + 1, axis=-1),
-        np.repeat(obstacle_view_mask, repeats=OBSTACLE_STATE_DIM + 1, axis=-1),
-        np.repeat(teammate_view_mask, repeats=teammate_state_dim + 1, axis=-1),
-    ])
+    view_mask = np.hstack(
+        [
+            np.repeat(opponent_view_mask, repeats=opponent_state_dim + 1, axis=-1),
+            np.repeat(obstacle_view_mask, repeats=OBSTACLE_STATE_DIM + 1, axis=-1),
+            np.repeat(teammate_view_mask, repeats=teammate_state_dim + 1, axis=-1),
+        ]
+    )
 
-    coordinate_mask = np.broadcast_to(coordinate_mask_of(team, num_cameras, num_targets, num_obstacles),
-                                      shape=converted.shape).copy()
+    coordinate_mask = np.broadcast_to(
+        coordinate_mask_of(team, num_cameras, num_targets, num_obstacles), shape=converted.shape
+    ).copy()
     other_entities_size = view_mask.shape[-1]
-    coordinate_mask[..., -other_entities_size:] = np.logical_and(coordinate_mask[..., -other_entities_size:], view_mask)
+    coordinate_mask[..., -other_entities_size:] = np.logical_and(
+        coordinate_mask[..., -other_entities_size:], view_mask
+    )
 
-    origin = converted[..., PRESERVED_DIM:PRESERVED_DIM + 2]
+    origin = converted[..., PRESERVED_DIM : PRESERVED_DIM + 2]
     if converted.ndim == 1:
         converted[coordinate_mask] -= np.tile(origin, reps=coordinate_mask.sum() // 2)
     else:
         for i in range(converted.shape[0]):
-            converted[i, coordinate_mask[i]] -= np.tile(origin[i], reps=coordinate_mask[i].sum() // 2)
+            converted[i, coordinate_mask[i]] -= np.tile(
+                origin[i], reps=coordinate_mask[i].sum() // 2
+            )
 
     if observation.shape[-1] == observation_space.shape[-1]:
         return converted
-    return np.hstack([converted, observation[..., observation_space.shape[-1]:]])
+    return np.hstack([converted, observation[..., observation_space.shape[-1] :]])
 
 
-def normalize_observation(observation: np.ndarray, observation_space: spaces.Box,
-                          additional_mask: Optional[np.ndarray] = None) -> np.ndarray:
+def normalize_observation(
+    observation: np.ndarray,
+    observation_space: spaces.Box,
+    additional_mask: Optional[np.ndarray] = None,
+) -> np.ndarray:
     """Rescale all entity states in the observation to [-1., +1.]."""
 
     assert observation.shape[-1] >= observation_space.shape[-1], (
@@ -78,7 +106,7 @@ def normalize_observation(observation: np.ndarray, observation_space: spaces.Box
         f'Got observation.shape[-1] = {observation.shape[-1]}.'
     )
 
-    rescaled = observation[..., :observation_space.shape[-1]].copy()
+    rescaled = observation[..., : observation_space.shape[-1]].copy()
 
     bounded_below = observation_space.bounded_below
     bounded_above = observation_space.bounded_above
@@ -87,16 +115,21 @@ def normalize_observation(observation: np.ndarray, observation_space: spaces.Box
     if additional_mask is not None:
         mask = np.logical_and(mask, additional_mask)
 
-    rescaled[..., bounded_below] = rescaled[..., bounded_below] - observation_space.low[bounded_below]
-    rescaled[..., mask] = 2.0 * rescaled[..., mask] / ((observation_space.high - observation_space.low)[mask]) - 1.0
+    rescaled[..., bounded_below] = (
+        rescaled[..., bounded_below] - observation_space.low[bounded_below]
+    )
+    rescaled[..., mask] = (
+        2.0 * rescaled[..., mask] / ((observation_space.high - observation_space.low)[mask]) - 1.0
+    )
 
     if observation.shape[-1] == observation_space.shape[-1]:
         return rescaled
-    return np.hstack([rescaled, observation[..., observation_space.shape[-1]:]])
+    return np.hstack([rescaled, observation[..., observation_space.shape[-1] :]])
 
 
-def rescale_observation(observation: np.ndarray,
-                        team: Team, num_cameras: int, num_targets: int, num_obstacles: int) -> np.ndarray:
+def rescale_observation(
+    observation: np.ndarray, team: Team, num_cameras: int, num_targets: int, num_obstacles: int
+) -> np.ndarray:
     """Rescale all entity states in the observation to [-1., +1.]."""
 
     observation_space = observation_space_of(team, num_cameras, num_targets, num_obstacles)
@@ -104,8 +137,9 @@ def rescale_observation(observation: np.ndarray,
     return normalize_observation(observation, observation_space)
 
 
-def split_observation(observation: np.ndarray, team: Team,
-                      num_cameras: int, num_targets: int, num_obstacles: int) -> Tuple[(np.ndarray,) * 5]:
+def split_observation(
+    observation: np.ndarray, team: Team, num_cameras: int, num_targets: int, num_obstacles: int
+) -> Tuple[(np.ndarray,) * 5]:
     """Splits the concatenated observations into parts."""
 
     indices = observation_indices_of(team, num_cameras, num_targets, num_obstacles)
@@ -208,7 +242,9 @@ class CameraStatePrivate(CameraStatePublic):
     @property
     def min_viewing_angle(self) -> Union[float, np.ndarray]:
         if self._min_viewing_angle is None:
-            self._min_viewing_angle = self.viewing_angle * np.square(self.sight_range / self.max_sight_range)
+            self._min_viewing_angle = self.viewing_angle * np.square(
+                self.sight_range / self.max_sight_range
+            )
         return self._min_viewing_angle
 
     @property
@@ -225,9 +261,13 @@ class CameraStatePrivate(CameraStatePublic):
 
     @property
     def action_space(self) -> spaces.Box:
-        return spaces.Box(low=np.asarray([-self.rotation_step, -self.zooming_step]),  # pylint: disable=invalid-unary-operand-type
-                          high=np.asarray([self.rotation_step, self.zooming_step]),
-                          dtype=np.float64)
+        return spaces.Box(
+            low=np.asarray(
+                [-self.rotation_step, -self.zooming_step]
+            ),  # pylint: disable=invalid-unary-operand-type
+            high=np.asarray([self.rotation_step, self.zooming_step]),
+            dtype=np.float64,
+        )
 
 
 class TargetStatePublic(StateBase):
@@ -280,20 +320,26 @@ class TargetStatePrivate(StateBase):
     @property
     def goal_bits(self) -> np.ndarray:
         if self._goal_bits is None:
-            self._goal_bits = self.state[..., 6:6 + NUM_WAREHOUSES].astype(np.int64)
+            self._goal_bits = self.state[..., 6 : 6 + NUM_WAREHOUSES].astype(np.int64)
         return self._goal_bits
 
     @property
     def empty_bits(self) -> np.ndarray:
         if self._empty_bits is None:
-            self._empty_bits = self.state[..., 6 + NUM_WAREHOUSES:6 + 2 * NUM_WAREHOUSES].astype(np.bool8)
+            self._empty_bits = self.state[..., 6 + NUM_WAREHOUSES : 6 + 2 * NUM_WAREHOUSES].astype(
+                np.bool8
+            )
         return self._empty_bits
 
     @property
     def action_space(self) -> spaces.Box:
-        return spaces.Box(low=np.asarray([-self.step_size, -self.step_size]),  # pylint: disable=invalid-unary-operand-type
-                          high=np.asarray([self.step_size, self.step_size]),
-                          dtype=np.float64)
+        return spaces.Box(
+            low=np.asarray(
+                [-self.step_size, -self.step_size]
+            ),  # pylint: disable=invalid-unary-operand-type
+            high=np.asarray([self.step_size, self.step_size]),
+            dtype=np.float64,
+        )
 
 
 class ObstacleState(StateBase):

@@ -1,0 +1,4 @@
+include LICENSE
+
+# Include asset files in sdist
+recursive-include mate/assets *

@@ -25,15 +25,12 @@ def main():
     mate.group_reset(target_agents, target_joint_observation)
     target_infos = None
     for i in range(MAX_EPISODE_STEPS):
-        target_joint_action = mate.group_step(env, target_agents,
-                                              target_joint_observation,
-                                              target_infos)
-        (
-            target_joint_observation,
-            target_team_reward,
-            done,
-            target_infos
-        ) = env.step(target_joint_action)
+        target_joint_action = mate.group_step(
+            env, target_agents, target_joint_observation, target_infos
+        )
+
+        results = env.step(target_joint_action)
+        target_joint_observation, target_team_reward, done, target_infos = results
 
         env.render()
         if done:

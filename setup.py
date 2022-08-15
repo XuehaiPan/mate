@@ -1,18 +1,18 @@
 """MATE: The Multi-Agent Tracking Environment."""
 
+import pathlib
+import sys
+
 from setuptools import setup
 
 
-__version__ = '0.1'
-__license__ = 'MIT'
-__author__ = __maintainer__ = 'Xuehai Pan'
-__email__ = 'XuehaiPan@pku.edu.cn'
+HERE = pathlib.Path(__file__).absolute().parent
+
+sys.path.insert(0, str(HERE / 'mate'))
+import version  # pylint: disable=import-error,wrong-import-position
 
 
 setup(
     name='mate',
-    version=__version__,
-    description=__doc__,
-    author=__author__,
-    author_email=__email__,
+    version=version.__version__,
 )

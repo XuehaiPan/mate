@@ -3,4 +3,5 @@
 from examples.qmix.target.agent import QMIXTargetAgent
 from examples.qmix.target.config import config
 
+
 TargetAgent = QMIXTargetAgent

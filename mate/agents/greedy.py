@@ -3,8 +3,8 @@
 import numpy as np
 
 from mate.agents.base import CameraAgentBase, TargetAgentBase
-from mate.constants import NUM_WAREHOUSES, WAREHOUSES, MAX_CAMERA_VIEWING_ANGLE
-from mate.utils import sin_deg, normalize_angle
+from mate.constants import MAX_CAMERA_VIEWING_ANGLE, NUM_WAREHOUSES, WAREHOUSES
+from mate.utils import normalize_angle, sin_deg
 
 
 __all__ = ['GreedyCameraAgent', 'GreedyTargetAgent']
@@ -17,8 +17,9 @@ class GreedyCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instance-a
     If no target found, use previous action or generate a new random action.
     """
 
-    def __init__(self, seed=None, memory_period=25,
-                 filterout_unloaded=False, filterout_beyond_range=True):
+    def __init__(
+        self, seed=None, memory_period=25, filterout_unloaded=False, filterout_beyond_range=True
+    ):
         """Initialize the agent.
         This function will be called only once on initialization.
         """
@@ -82,8 +83,9 @@ class GreedyCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instance-a
             threshold = self.range_factor * self.state.max_sight_range
             tracked_targets = [ts for ts in tracked_targets if (ts - self.state).norm < threshold]
         if self.filterout_unloaded:
-            tracked_targets = [ts for ts in tracked_targets
-                               if ts.is_loaded or self.never_loaded[ts.index]]
+            tracked_targets = [
+                ts for ts in tracked_targets if ts.is_loaded or self.never_loaded[ts.index]
+            ]
 
         if len(tracked_targets) > 0:
             action = self.act_from_target_states(tracked_targets)
@@ -113,9 +115,9 @@ class GreedyCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instance-a
     def act_from_target_states(self, target_states):
         """Place the selected target at the center of the field of view."""
 
-        assert len(target_states) > 0, (
-            'You should provide at least one target to compute the action.'
-        )
+        assert (
+            len(target_states) > 0
+        ), 'You should provide at least one target to compute the action.'
 
         def select_target():
             """Select the nearest target."""
@@ -128,7 +130,10 @@ class GreedyCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instance-a
         def best_viewing_angle():
             distance = (target_state - self.state).norm
 
-            if distance * (1.0 + sin_deg(self.state.min_viewing_angle / 2.0)) >= self.state.max_sight_range:
+            if (
+                distance * (1.0 + sin_deg(self.state.min_viewing_angle / 2.0))
+                >= self.state.max_sight_range
+            ):
                 return self.state.min_viewing_angle
 
             area_product = self.state.viewing_angle * np.square(self.state.sight_range)
@@ -138,16 +143,17 @@ class GreedyCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instance-a
             best = min(180.0, MAX_CAMERA_VIEWING_ANGLE)
             for _ in range(20):
                 sight_range = distance * (1.0 + sin_deg(min(best / 2.0, 90.0)))
-                best = (area_product / np.square(sight_range))
+                best = area_product / np.square(sight_range)
             return np.clip(best, a_min=self.state.min_viewing_angle, a_max=MAX_CAMERA_VIEWING_ANGLE)
 
         target_state = select_target()
 
-        return np.asarray([
-            normalize_angle(best_orientation() - self.state.orientation),
-            best_viewing_angle() - self.state.viewing_angle
-        ]).clip(min=self.action_space.low,
-                max=self.action_space.high)
+        return np.asarray(
+            [
+                normalize_angle(best_orientation() - self.state.orientation),
+                best_viewing_angle() - self.state.viewing_angle,
+            ]
+        ).clip(min=self.action_space.low, max=self.action_space.high)
 
     def send_responses(self):
         """Prepare messages to communicate with other agents in the same team.
@@ -170,7 +176,10 @@ class GreedyCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instance-a
                         teammate_state = self.neighboring_teammate_states[c]
                         threshold = self.range_factor * teammate_state.max_sight_range
                         content['target_states'] = [
-                            ts for ts in content['target_states'] if (ts - teammate_state).norm < threshold]
+                            ts
+                            for ts in content['target_states']
+                            if (ts - teammate_state).norm < threshold
+                        ]
                         if len(content['target_states']) == 0:
                             del content['target_states']
                     else:
@@ -199,8 +208,11 @@ class GreedyCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instance-a
                 is_neighboring = True
                 if self.filterout_beyond_range:
                     distance = (teammate_state - self.state).norm
-                    threshold = self.state.max_sight_range + self.range_factor * teammate_state.max_sight_range
-                    is_neighboring = (distance < threshold)
+                    threshold = (
+                        self.state.max_sight_range
+                        + self.range_factor * teammate_state.max_sight_range
+                    )
+                    is_neighboring = distance < threshold
                 if is_neighboring:
                     self.neighboring_teammate_states[message.sender] = teammate_state
                 elif message.sender in self.neighboring_teammate_states:
@@ -286,7 +298,9 @@ class GreedyTargetAgent(TargetAgentBase):  # pylint: disable=too-many-instance-a
 
         if self.state.goal_bits.any():
             self.goal_bits = self.state.goal_bits
-        if self.goal is None or (not self.state.goal_bits.any() and self.goal not in self.non_empty_warehouses):
+        if self.goal is None or (
+            not self.state.goal_bits.any() and self.goal not in self.non_empty_warehouses
+        ):
             self.goal_bits = np.zeros_like(self.state.goal_bits)
             if len(self.non_empty_warehouses) > 0:
                 new_goal = self.np_random.choice(list(self.non_empty_warehouses))
@@ -302,14 +316,13 @@ class GreedyTargetAgent(TargetAgentBase):  # pylint: disable=too-many-instance-a
         if step_size > self.state.step_size:
             action *= self.state.step_size / step_size
 
-        prob = (0.05 if np.linalg.norm(prev_actual_action) > 0.2 * self.state.step_size else 0.75)
+        prob = 0.05 if np.linalg.norm(prev_actual_action) > 0.2 * self.state.step_size else 0.75
         if self.np_random.binomial(1, prob) != 0:
             noise = self.noise_scale * self.action_space.sample()
         else:
             noise = self.prev_noise
 
-        action = (action + noise).clip(min=self.action_space.low,
-                                       max=self.action_space.high)
+        action = (action + noise).clip(min=self.action_space.low, max=self.action_space.high)
 
         self.prev_state = self.state
         self.prev_noise = noise
@@ -333,9 +346,7 @@ class GreedyTargetAgent(TargetAgentBase):  # pylint: disable=too-many-instance-a
         messages = []
 
         if self.need_communication:
-            content = {
-                'non_empty_warehouses': self.non_empty_warehouses.copy()
-            }
+            content = {'non_empty_warehouses': self.non_empty_warehouses.copy()}
             messages.append(self.pack_message(content=content))  # broadcasting
             self.need_communication = False
 

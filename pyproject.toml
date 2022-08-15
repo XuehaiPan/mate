@@ -1,0 +1,81 @@
+# Package ######################################################################
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mate"
+description = "MATE: The Multi-Agent Tracking Environment."
+readme = "README.md"
+requires-python = ">= 3.7"
+authors = [{ name = "Xuehai Pan", email = "XuehaiPan@pku.edu.cn" }]
+license = { text = "MIT" }
+keywords = [
+    "Multi-Agent",
+    "Reinforcement Learning",
+    "RL",
+    "MARL",
+    "Deep Learning",
+    "OpenAI Gym",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "numpy >= 1.17.0",
+    "scipy >= 1.0.0",
+    "gym >= 0.13.0, < 1.0a",
+    "pyglet >= 1.3.0",
+    "pyyaml >= 5.1",
+    "tqdm >= 4.11.0",
+    "typing-extensions",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/XuehaiPan/mate"
+Repository = "https://github.com/XuehaiPan/mate"
+Documentation = "https://mate-gym.readthedocs.io"
+"Bug Report" = "https://github.com/XuehaiPan/mate/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["mate", "mate.*"]
+
+[tool.setuptools.package-data]
+assets = [
+    "assets/*.yaml",
+    "assets/*.yml",
+    "assets/*.json",
+    "assets/*.txt",
+    "assets/images/*.png",
+]
+
+# Linter tools #################################################################
+
+[tool.black]
+safe = true
+line-length = 100
+skip-string-normalization = true
+target-version = ["py37", "py38", "py39", "py310"]
+
+[tool.isort]
+profile = "black"
+src_paths = ["mate", "examples"]
+indent = 4
+line_length = 100
+lines_after_imports = 2
+multi_line_output = 3

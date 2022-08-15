@@ -1,7 +1,4 @@
-from . import callbacks
-from . import models
-from . import rllib_policy
-from . import wrappers
+from . import callbacks, models, rllib_policy, wrappers
 from .callbacks import *
 from .models import *
 from .rllib_policy import *

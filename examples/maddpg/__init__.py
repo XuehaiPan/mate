@@ -4,5 +4,6 @@ from examples.maddpg import camera, target
 from examples.maddpg.camera import MADDPGCameraAgent
 from examples.maddpg.target import MADDPGTargetAgent
 
+
 CameraAgent = MADDPGCameraAgent
 TargetAgent = MADDPGTargetAgent

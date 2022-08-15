@@ -14,8 +14,16 @@ import mate
 
 @ray.remote(max_restarts=3)
 class Evaluator:
-    def __init__(self, entry, camera_agent, target_agent, env_config,
-                 deterministic=None, seed=0, horizon=+np.inf):
+    def __init__(
+        self,
+        entry,
+        camera_agent,
+        target_agent,
+        env_config,
+        deterministic=None,
+        seed=0,
+        horizon=+np.inf,
+    ):
         self.entry = entry
         self.camera_agent = camera_agent.clone()
         self.target_agent = target_agent.clone()
@@ -28,8 +36,11 @@ class Evaluator:
 
     def make_evaluation_env(self, seed=None):
         env_id = self.env_config.get('env_id', 'MultiAgentTracking-v0')
-        base_env = mate.make(env_id, config=self.env_config.get('config'),
-                             **self.env_config.get('config_overrides', {}))
+        base_env = mate.make(
+            env_id,
+            config=self.env_config.get('config'),
+            **self.env_config.get('config_overrides', {}),
+        )
 
         enhance_team = str(self.env_config.get('enhanced_observation', None)).lower()
         if enhance_team is not None:
@@ -67,19 +78,17 @@ class Evaluator:
         mate.group_reset(target_agents, target_joint_observation)
 
         while env.episode_step < self.horizon:
-            camera_joint_action = mate.group_step(env, camera_agents,
-                                                  camera_joint_observation,
-                                                  camera_infos,
-                                                  self.deterministic)
-            target_joint_action = mate.group_step(env, target_agents,
-                                                  target_joint_observation,
-                                                  target_infos,
-                                                  self.deterministic)
+            camera_joint_action = mate.group_step(
+                env, camera_agents, camera_joint_observation, camera_infos, self.deterministic
+            )
+            target_joint_action = mate.group_step(
+                env, target_agents, target_joint_observation, target_infos, self.deterministic
+            )
             (
                 (camera_joint_observation, target_joint_observation),
                 (camera_team_reward, target_team_reward),
                 done,
-                (camera_infos, target_infos)
+                (camera_infos, target_infos),
             ) = env.step((camera_joint_action, target_joint_action))
 
             camera_team_episode_reward += camera_team_reward
@@ -127,21 +136,25 @@ def expand_size(array, shape, fill_value=np.nan, dtype=np.float64):
     return array
 
 
-def evaluate(payoff_matrices,
-             coverage_rate_matrix,
-             camera_agent_pool,
-             target_agent_pool,
-             env_config,
-             deterministic=None,
-             num_workers=None,
-             num_episodes=100,
-             horizon=+np.inf):
+def evaluate(
+    payoff_matrices,
+    coverage_rate_matrix,
+    camera_agent_pool,
+    target_agent_pool,
+    env_config,
+    deterministic=None,
+    num_workers=None,
+    num_episodes=100,
+    horizon=+np.inf,
+):
 
     m, n = len(camera_agent_pool), len(target_agent_pool)
-    payoff_matrices = expand_size(payoff_matrices, shape=(2, m, n),
-                                  fill_value=np.nan, dtype=np.float64)
-    coverage_rate_matrix = expand_size(coverage_rate_matrix, shape=(m, n),
-                                       fill_value=np.nan, dtype=np.float64)
+    payoff_matrices = expand_size(
+        payoff_matrices, shape=(2, m, n), fill_value=np.nan, dtype=np.float64
+    )
+    coverage_rate_matrix = expand_size(
+        coverage_rate_matrix, shape=(m, n), fill_value=np.nan, dtype=np.float64
+    )
 
     if num_workers is None:
         num_workers = round(ray.cluster_resources()['CPU'])
@@ -159,14 +172,17 @@ def evaluate(payoff_matrices,
                 env_config=env_config,
                 deterministic=deterministic,
                 seed=e,
-                horizon=horizon
+                horizon=horizon,
             )
 
     not_ready = []
     evaluators = {}
     results = []
-    with tqdm.tqdm(desc=f'Update payoffs{(len(camera_agent_pool), len(target_agent_pool))}',
-                   total=len(pending), unit='episode') as pbar:
+    with tqdm.tqdm(
+        desc=f'Update payoffs{(len(camera_agent_pool), len(target_agent_pool))}',
+        total=len(pending),
+        unit='episode',
+    ) as pbar:
         while len(not_ready) > 0 or len(pending) > 0:
             while len(not_ready) < num_workers and len(pending) > 0:
                 identifier = next(iter(pending))
@@ -205,8 +221,8 @@ def calculate_exploitability(payoff_matrices, sigma_row, sigma_col):
     subgame = nash.Game(*payoff_matrices[:, :m, :n])
 
     payoff_row, payoff_col = subgame[sigma_row, sigma_col]
-    payoff_row_br = np.dot(payoff_matrices[0, :m + 1, :n], sigma_col).max()
-    payoff_col_br = np.dot(payoff_matrices[1, :m, :n + 1].T, sigma_row).max()
+    payoff_row_br = np.dot(payoff_matrices[0, : m + 1, :n], sigma_col).max()
+    payoff_col_br = np.dot(payoff_matrices[1, :m, : n + 1].T, sigma_row).max()
 
     exploitability_row = payoff_row_br - payoff_row
     exploitability_col = payoff_col_br - payoff_col

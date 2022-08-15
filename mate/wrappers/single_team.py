@@ -1,26 +1,37 @@
 # pylint: disable=missing-module-docstring
 
 import itertools
-from typing import List, Tuple, Iterable, Dict, Union, Optional, Any
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 import gym
 import numpy as np
 
 from mate.agents.base import CameraAgentBase, TargetAgentBase
 from mate.utils import Message, Team
-from mate.wrappers.typing import WrapperMeta, AgentType, BaseEnvironmentType, assert_base_environment  # pylint: disable=cyclic-import
+
+# pylint: disable-next=cyclic-import
+from mate.wrappers.typing import (
+    AgentType,
+    BaseEnvironmentType,
+    WrapperMeta,
+    assert_base_environment,
+)
 
 
-def group_reset(agents: Iterable[AgentType], joint_observation: Union[np.ndarray, Iterable[np.ndarray]]) -> None:
+def group_reset(
+    agents: Iterable[AgentType], joint_observation: Union[np.ndarray, Iterable[np.ndarray]]
+) -> None:
     """Reset a group of agents."""
 
     for agent, observation in zip(agents, joint_observation):
         agent.reset(observation)
 
 
-def group_observe(agents: Iterable[AgentType],
-                  joint_observation: Union[np.ndarray, Iterable[np.ndarray]],
-                  infos: Optional[List[dict]] = None) -> List[Union[int, np.ndarray]]:
+def group_observe(
+    agents: Iterable[AgentType],
+    joint_observation: Union[np.ndarray, Iterable[np.ndarray]],
+    infos: Optional[List[dict]] = None,
+) -> List[Union[int, np.ndarray]]:
     """Set the observation for a group of agents."""
 
     if infos is None:
@@ -48,24 +59,30 @@ def group_communicate(env: BaseEnvironmentType, agents: Iterable[AgentType]) -> 
         agent.receive_responses(env.receive_messages(agent=agent))
 
 
-def group_act(agents: Iterable[AgentType],
-              joint_observation: Union[np.ndarray, Iterable[np.ndarray]],
-              infos: Optional[List[dict]] = None,
-              deterministic: Optional[bool] = None) -> List[Union[int, np.ndarray]]:
+def group_act(
+    agents: Iterable[AgentType],
+    joint_observation: Union[np.ndarray, Iterable[np.ndarray]],
+    infos: Optional[List[dict]] = None,
+    deterministic: Optional[bool] = None,
+) -> List[Union[int, np.ndarray]]:
     """Get the joint action of a group of agents."""
 
     if infos is None:
         infos = itertools.repeat(None)
 
-    return [agent.act(observation, info, deterministic=deterministic)
-            for agent, observation, info in zip(agents, joint_observation, infos)]
+    return [
+        agent.act(observation, info, deterministic=deterministic)
+        for agent, observation, info in zip(agents, joint_observation, infos)
+    ]
 
 
-def group_step(env: BaseEnvironmentType,
-               agents: Iterable[AgentType],
-               joint_observation: Union[np.ndarray, Iterable[np.ndarray]],
-               infos: Optional[List[dict]] = None,
-               deterministic: Optional[bool] = None) -> List[Union[int, np.ndarray]]:
+def group_step(
+    env: BaseEnvironmentType,
+    agents: Iterable[AgentType],
+    joint_observation: Union[np.ndarray, Iterable[np.ndarray]],
+    infos: Optional[List[dict]] = None,
+    deterministic: Optional[bool] = None,
+) -> List[Union[int, np.ndarray]]:
     """Helper function to do a environment step for a group of agents."""
 
     group_observe(agents, joint_observation, infos)
@@ -75,10 +92,8 @@ def group_step(env: BaseEnvironmentType,
     return joint_action
 
 
-class SingleTeamHelper(
-    gym.Wrapper,
-    metaclass=WrapperMeta
-):  # pylint: disable=missing-class-docstring,too-many-instance-attributes
+# pylint: disable-next=missing-class-docstring,too-many-instance-attributes
+class SingleTeamHelper(gym.Wrapper, metaclass=WrapperMeta):
     def __init__(self, env: BaseEnvironmentType, team: Team) -> None:
         assert_base_environment(env)
 
@@ -88,25 +103,32 @@ class SingleTeamHelper(
 
         # pylint: disable=unbalanced-tuple-unpacking
         self.num_teammates, self.num_opponents = self.swap(env.num_cameras, env.num_targets)
-        self.teammate_action_space, self.opponent_action_space \
-            = self.swap(env.camera_action_space, env.target_action_space)
-        self.teammate_joint_action_space, self.opponent_joint_action_space \
-            = self.swap(env.camera_joint_action_space, env.target_joint_action_space)
-        self.teammate_observation_space, self.opponent_observation_space \
-            = self.swap(env.camera_observation_space, env.target_observation_space)
-        self.teammate_joint_observation_space, self.opponent_joint_observation_space \
-            = self.swap(env.camera_joint_observation_space, env.target_joint_observation_space)
-        self.teammate_message_buffer, self.opponent_message_buffer \
-            = self.swap(env.camera_message_buffer, env.target_message_buffer)
-        self.teammate_message_queue, self.opponent_message_queue \
-            = self.swap(env.camera_message_queue, env.target_message_queue)
+        self.teammate_action_space, self.opponent_action_space = self.swap(
+            env.camera_action_space, env.target_action_space
+        )
+        self.teammate_joint_action_space, self.opponent_joint_action_space = self.swap(
+            env.camera_joint_action_space, env.target_joint_action_space
+        )
+        self.teammate_observation_space, self.opponent_observation_space = self.swap(
+            env.camera_observation_space, env.target_observation_space
+        )
+        self.teammate_joint_observation_space, self.opponent_joint_observation_space = self.swap(
+            env.camera_joint_observation_space, env.target_joint_observation_space
+        )
+        self.teammate_message_buffer, self.opponent_message_buffer = self.swap(
+            env.camera_message_buffer, env.target_message_buffer
+        )
+        self.teammate_message_queue, self.opponent_message_queue = self.swap(
+            env.camera_message_queue, env.target_message_queue
+        )
+        # pylint: enable=unbalanced-tuple-unpacking
 
         assert self.num_teammates > 0, (
             f'There must be at least one agent in the {team.name.lower()} team. '
             f'Got num_teammates = {self.num_teammates}.'
         )
-
-        from mate.wrappers.repeated_reward_individual_done import RepeatedRewardIndividualDone  # pylint: disable=import-outside-toplevel,cyclic-import
+        # pylint: disable-next=import-outside-toplevel,cyclic-import
+        from mate.wrappers.repeated_reward_individual_done import RepeatedRewardIndividualDone
 
         self.repeated_reward_individual_done = isinstance(env, RepeatedRewardIndividualDone)
 
@@ -118,20 +140,25 @@ class SingleTeamHelper(
         return self.swap(*self.env.reset(**kwargs))
 
     def step(
-        self,
-        action: Tuple[np.ndarray, np.ndarray]
-    ) -> Union[Tuple[Tuple[np.ndarray, np.ndarray],  # original form
-                     Tuple[float, float],
-                     bool,
-                     Tuple[List[dict], List[dict]]],
-               Tuple[Tuple[np.ndarray, np.ndarray],  # repeated reward and individual done
-                     Tuple[List[float], List[float]],
-                     Tuple[List[bool], List[bool]],
-                     Tuple[List[dict], List[dict]]]]:
+        self, action: Tuple[np.ndarray, np.ndarray]
+    ) -> Union[
+        # original form
+        Tuple[
+            Tuple[np.ndarray, np.ndarray], Tuple[float, float], bool, Tuple[List[dict], List[dict]]
+        ],
+        # repeated reward and individual done
+        Tuple[
+            Tuple[np.ndarray, np.ndarray],
+            Tuple[List[float], List[float]],
+            Tuple[List[bool], List[bool]],
+            Tuple[List[dict], List[dict]],
+        ],
+    ]:
 
         return self.swap(*self.env.step(self.swap(*action)))
 
-    def swap(self, *items) -> Union[Tuple[Any, Any], Tuple[Any, Any, Any, Any]]:  # pylint: disable=missing-function-docstring
+    # pylint: disable-next=missing-function-docstring
+    def swap(self, *items) -> Union[Tuple[Any, Any], Tuple[Any, Any, Any, Any]]:
         assert len(items) == 2 or len(items) == 4
 
         if self.team is Team.CAMERA:
@@ -139,7 +166,9 @@ class SingleTeamHelper(
 
         if len(items) == 2:
             return items[1], items[0]
-        return tuple(map(lambda item: (item[1], item[0]) if isinstance(item, (tuple, list)) else item, items))
+        return tuple(
+            map(lambda item: (item[1], item[0]) if isinstance(item, (tuple, list)) else item, items)
+        )
 
 
 class SingleTeamMultiAgent(SingleTeamHelper):
@@ -165,8 +194,9 @@ class SingleTeamMultiAgent(SingleTeamHelper):
 
         self.env.load_config(config=config)
 
-        SingleTeamMultiAgent.__init__(self, self.env, team=self.team,
-                                      opponent_agent=self.opponent_agent)
+        SingleTeamMultiAgent.__init__(
+            self, self.env, team=self.team, opponent_agent=self.opponent_agent
+        )
 
     def reset(self, **kwargs) -> np.ndarray:
         joint_observation, self.opponent_joint_observation = super().reset(**kwargs)
@@ -198,10 +228,9 @@ class SingleTeamMultiAgent(SingleTeamHelper):
 
         self.env.send_messages(messages)
 
-    def receive_messages(self,
-                         agent_id: Optional[Tuple[Team, int]] = None,
-                         agent: Optional['AgentType'] = None) -> Union[List[List[Message]],
-                                                                       List[Message]]:
+    def receive_messages(
+        self, agent_id: Optional[Tuple[Team, int]] = None, agent: Optional['AgentType'] = None
+    ) -> Union[List[List[Message]], List[Message]]:
         """Retrieve the messages to recipients. If no agent is specified, this
         method will return all the messages to all agents in the environment.
 
@@ -214,18 +243,22 @@ class SingleTeamMultiAgent(SingleTeamHelper):
 
         return self.env.receive_messages(agent_id=agent_id, agent=agent)
 
-    def step(self, action: np.ndarray) -> Union[Tuple[np.ndarray, float, bool, List[dict]],
-                                                Tuple[np.ndarray, List[float], List[bool], List[dict]]]:
+    def step(
+        self, action: np.ndarray
+    ) -> Union[
+        Tuple[np.ndarray, float, bool, List[dict]],
+        Tuple[np.ndarray, List[float], List[bool], List[dict]],
+    ]:
 
-        opponent_joint_action = group_step(self.env, self.opponent_agents,
-                                           self.opponent_joint_observation,
-                                           self.opponent_infos)
+        opponent_joint_action = group_step(
+            self.env, self.opponent_agents, self.opponent_joint_observation, self.opponent_infos
+        )
 
         (
             (joint_observation, self.opponent_joint_observation),
             (reward, _),
             done,
-            (infos, self.opponent_infos)
+            (infos, self.opponent_infos),
         ) = super().step((np.asarray(action), np.asarray(opponent_joint_action)))
 
         if self.repeated_reward_individual_done:
@@ -243,7 +276,8 @@ class SingleTeamMultiAgent(SingleTeamHelper):
         return seeds
 
     def __str__(self) -> str:
-        return '<{0}(opponent={1.__module__}.{1.__name__}){2}>'.format(  # pylint: disable=consider-using-f-string
+        # pylint: disable-next=consider-using-f-string
+        return '<{0}(opponent={1.__module__}.{1.__name__}){2}>'.format(
             self.__class__.__name__, self.opponent_agent.__class__, self.env
         )
 
@@ -257,11 +291,10 @@ class MultiCamera(SingleTeamMultiAgent):
 
         assert isinstance(target_agent, TargetAgentBase), (
             f'You should provide an instance of target agent. '
-            f'Got target_agent = {target_agent:!r}.'
+            f'Got target_agent = {target_agent!r}.'
         )
 
-        super().__init__(env, team=Team.CAMERA,
-                         opponent_agent=target_agent)
+        super().__init__(env, team=Team.CAMERA, opponent_agent=target_agent)
 
 
 class MultiTarget(SingleTeamMultiAgent):
@@ -273,11 +306,10 @@ class MultiTarget(SingleTeamMultiAgent):
 
         assert isinstance(camera_agent, CameraAgentBase), (
             f'You should provide an instance of camera agent. '
-            f'Got camera_agent = {camera_agent:!r}.'
+            f'Got camera_agent = {camera_agent!r}.'
         )
 
-        super().__init__(env, team=Team.TARGET,
-                         opponent_agent=camera_agent)
+        super().__init__(env, team=Team.TARGET, opponent_agent=camera_agent)
 
 
 class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-instance-attributes
@@ -285,8 +317,13 @@ class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-insta
     users can use the Gym API to train and/or evaluate their agent.
     """
 
-    def __init__(self, env: BaseEnvironmentType, team: Team,
-                 teammate_agent: AgentType, opponent_agent: AgentType) -> None:
+    def __init__(
+        self,
+        env: BaseEnvironmentType,
+        team: Team,
+        teammate_agent: AgentType,
+        opponent_agent: AgentType,
+    ) -> None:
 
         super().__init__(env, team=team)
 
@@ -311,9 +348,13 @@ class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-insta
 
         self.env.load_config(config=config)
 
-        SingleTeamSingleAgent.__init__(self, self.env, team=self.team,
-                                       teammate_agent=self.teammate_agent,
-                                       opponent_agent=self.opponent_agent)
+        SingleTeamSingleAgent.__init__(
+            self,
+            self.env,
+            team=self.team,
+            teammate_agent=self.teammate_agent,
+            opponent_agent=self.opponent_agent,
+        )
 
     def reset(self, **kwargs) -> np.ndarray:
         self.joint_observation, self.opponent_joint_observation = super().reset(**kwargs)
@@ -331,8 +372,12 @@ class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-insta
             self.index = self.np_random.randint(self.num_teammates)
             self.np_random.shuffle(self.teammate_agents)
 
-        group_reset(self.teammate_agents, itertools.chain(self.joint_observation[:self.index],
-                                                          self.joint_observation[self.index + 1:]))
+        group_reset(
+            self.teammate_agents,
+            itertools.chain(
+                self.joint_observation[: self.index], self.joint_observation[self.index + 1 :]
+            ),
+        )
         self.infos = None
 
         if isinstance(self.joint_observation, np.ndarray):
@@ -360,10 +405,9 @@ class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-insta
 
         self.env.send_messages(messages)
 
-    def receive_messages(self,
-                         agent_id: Optional[Tuple[Team, int]] = None,
-                         agent: Optional['AgentType'] = None) -> Union[List[List[Message]],
-                                                                       List[Message]]:
+    def receive_messages(
+        self, agent_id: Optional[Tuple[Team, int]] = None, agent: Optional['AgentType'] = None
+    ) -> Union[List[List[Message]], List[Message]]:
         """Retrieve the messages to recipients. If no agent is specified, this
         method will return all the messages to all agents in the environment.
 
@@ -378,28 +422,31 @@ class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-insta
 
     def step(self, action: Union[int, np.ndarray]) -> Tuple[np.ndarray, float, bool, dict]:
 
-        teammate_joint_observation = list(itertools.chain(self.joint_observation[:self.index],
-                                                          self.joint_observation[self.index + 1:]))
+        teammate_joint_observation = list(
+            itertools.chain(
+                self.joint_observation[: self.index], self.joint_observation[self.index + 1 :]
+            )
+        )
 
         if self.infos is not None:
-            teammate_infos = self.infos[:self.index] + self.infos[self.index + 1:]
+            teammate_infos = self.infos[: self.index] + self.infos[self.index + 1 :]
         else:
             teammate_infos = None
 
-        joint_action = group_step(self.env, self.teammate_agents,
-                                  teammate_joint_observation,
-                                  teammate_infos)
+        joint_action = group_step(
+            self.env, self.teammate_agents, teammate_joint_observation, teammate_infos
+        )
         joint_action.insert(self.index, action)
 
-        opponent_joint_action = group_step(self.env, self.opponent_agents,
-                                           self.opponent_joint_observation,
-                                           self.opponent_infos)
+        opponent_joint_action = group_step(
+            self.env, self.opponent_agents, self.opponent_joint_observation, self.opponent_infos
+        )
 
         (
             (self.joint_observation, self.opponent_joint_observation),
             (reward, _),
             done,
-            (self.infos, self.opponent_infos)
+            (self.infos, self.opponent_infos),
         ) = super().step((np.asarray(joint_action), np.asarray(opponent_joint_action)))
 
         if self.repeated_reward_individual_done:
@@ -412,9 +459,11 @@ class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-insta
         seeds = self.env.seed(seed)
 
         int_max = np.iinfo(int).max
-        for agent in itertools.chain([self.teammate_agent, self.opponent_agent],
-                                     self.teammate_agents_ordered,
-                                     self.opponent_agents_ordered):
+        for agent in itertools.chain(
+            [self.teammate_agent, self.opponent_agent],
+            self.teammate_agents_ordered,
+            self.opponent_agents_ordered,
+        ):
             seeds.append(agent.seed(self.np_random.randint(int_max))[0])
 
         return seeds
@@ -424,7 +473,7 @@ class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-insta
             self.__class__.__name__,
             self.teammate_agent.__class__,
             self.opponent_agent.__class__,
-            self.env
+            self.env,
         )
 
 
@@ -433,22 +482,25 @@ class SingleCamera(SingleTeamSingleAgent):
     users can use the Gym API to train and/or evaluate their camera agent.
     """
 
-    def __init__(self, env: BaseEnvironmentType,
-                 other_camera_agent: CameraAgentBase,
-                 target_agent: TargetAgentBase) -> None:
+    def __init__(
+        self,
+        env: BaseEnvironmentType,
+        other_camera_agent: CameraAgentBase,
+        target_agent: TargetAgentBase,
+    ) -> None:
 
         assert isinstance(other_camera_agent, CameraAgentBase), (
             f'You should provide an instance of camera agent. '
-            f'Got other_camera_agent = {other_camera_agent:!r}.'
+            f'Got other_camera_agent = {other_camera_agent!r}.'
         )
         assert isinstance(target_agent, TargetAgentBase), (
             f'You should provide an instance of target agent. '
-            f'Got target_agent = {target_agent:!r}.'
+            f'Got target_agent = {target_agent!r}.'
         )
 
-        super().__init__(env, team=Team.CAMERA,
-                         teammate_agent=other_camera_agent,
-                         opponent_agent=target_agent)
+        super().__init__(
+            env, team=Team.CAMERA, teammate_agent=other_camera_agent, opponent_agent=target_agent
+        )
 
 
 class SingleTarget(SingleTeamSingleAgent):
@@ -456,18 +508,21 @@ class SingleTarget(SingleTeamSingleAgent):
     users can use the Gym API to train and/or evaluate their target agent.
     """
 
-    def __init__(self, env: BaseEnvironmentType,
-                 other_target_agent: TargetAgentBase,
-                 camera_agent: CameraAgentBase) -> None:
+    def __init__(
+        self,
+        env: BaseEnvironmentType,
+        other_target_agent: TargetAgentBase,
+        camera_agent: CameraAgentBase,
+    ) -> None:
         assert isinstance(other_target_agent, TargetAgentBase), (
             f'You should provide an instance of target agent. '
-            f'Got other_target_agent = {other_target_agent:!r}.'
+            f'Got other_target_agent = {other_target_agent!r}.'
         )
         assert isinstance(camera_agent, CameraAgentBase), (
             f'You should provide an instance of camera agent. '
-            f'Got camera_agent = {camera_agent:!r}.'
+            f'Got camera_agent = {camera_agent!r}.'
         )
 
-        super().__init__(env, team=Team.TARGET,
-                         teammate_agent=other_target_agent,
-                         opponent_agent=camera_agent)
+        super().__init__(
+            env, team=Team.TARGET, teammate_agent=other_target_agent, opponent_agent=camera_agent
+        )

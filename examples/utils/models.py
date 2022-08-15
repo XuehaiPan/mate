@@ -11,9 +11,16 @@ torch, nn = try_import_torch()
 
 
 class SimpleMLP(nn.Module):
-    def __init__(self, name,
-                 input_dim, hidden_dims, output_dim, layer_norm=False,
-                 activation='relu', output_activation=None):
+    def __init__(
+        self,
+        name,
+        input_dim,
+        hidden_dims,
+        output_dim,
+        layer_norm=False,
+        activation='relu',
+        output_activation=None,
+    ):
         super().__init__()
 
         self.name = name
@@ -26,13 +33,17 @@ class SimpleMLP(nn.Module):
         hidden_layers = []
         hidden_dims = [input_dim, *hidden_dims]
         for i, (in_size, out_size) in enumerate(zip(hidden_dims[:-1], hidden_dims[1:])):
-            hidden_layers.append((
-                f'{name}_hidden_{i}',
-                SlimFC(in_size=in_size,
-                       out_size=out_size,
-                       initializer=normc_initializer(1.0),
-                       activation_fn=self.activation)
-            ))
+            hidden_layers.append(
+                (
+                    f'{name}_hidden_{i}',
+                    SlimFC(
+                        in_size=in_size,
+                        out_size=out_size,
+                        initializer=normc_initializer(1.0),
+                        activation_fn=self.activation,
+                    ),
+                )
+            )
             if layer_norm:
                 hidden_layers.append((f'{name}_layernorm_{i}', nn.LayerNorm(out_size)))
         self.hidden = nn.Sequential(OrderedDict(hidden_layers))
@@ -40,7 +51,7 @@ class SimpleMLP(nn.Module):
             in_size=hidden_dims[-1],
             out_size=self.output_dim,
             initializer=normc_initializer(0.01),
-            activation_fn=self.output_activation
+            activation_fn=self.output_activation,
         )
 
         self._last_features = None
@@ -70,9 +81,16 @@ class SimpleMLP(nn.Module):
 
 
 class SimpleRNN(nn.Module):
-    def __init__(self, name,
-                 input_dim, hidden_dims, cell_size, output_dim,
-                 activation='relu', output_activation=None):
+    def __init__(
+        self,
+        name,
+        input_dim,
+        hidden_dims,
+        cell_size,
+        output_dim,
+        activation='relu',
+        output_activation=None,
+    ):
         super().__init__()
 
         self.name = name
@@ -86,20 +104,24 @@ class SimpleRNN(nn.Module):
         hidden_layers = []
         hidden_dims = [input_dim, *hidden_dims]
         for i, (in_size, out_size) in enumerate(zip(hidden_dims[:-1], hidden_dims[1:])):
-            hidden_layers.append((
-                f'{name}_hidden_{i}',
-                SlimFC(in_size=in_size,
-                       out_size=out_size,
-                       initializer=normc_initializer(1.0),
-                       activation_fn=self.activation)
-            ))
+            hidden_layers.append(
+                (
+                    f'{name}_hidden_{i}',
+                    SlimFC(
+                        in_size=in_size,
+                        out_size=out_size,
+                        initializer=normc_initializer(1.0),
+                        activation_fn=self.activation,
+                    ),
+                )
+            )
         self.hidden = nn.Sequential(OrderedDict(hidden_layers))
         self.lstm = nn.LSTM(hidden_dims[-1], self.cell_size, batch_first=True)
         self.output = SlimFC(
             in_size=hidden_dims[-1] + self.cell_size,
             out_size=self.output_dim,
             initializer=normc_initializer(0.01),
-            activation_fn=self.output_activation
+            activation_fn=self.output_activation,
         )
 
         self._last_features = None

@@ -8,7 +8,7 @@ from gym import spaces
 from scipy.interpolate import interp1d
 
 from mate import constants as consts
-from mate.utils import arcsin_deg, normalize_angle, polar2cartesian, Vector2D, SpatialHashmap
+from mate.utils import SpatialHashmap, Vector2D, arcsin_deg, normalize_angle, polar2cartesian
 
 
 __all__ = ['Camera', 'Target', 'Obstacle']
@@ -38,18 +38,15 @@ class Entity(ABC):
             f'You should specify either a fixed location or a random range for the location. '
             f'Got (location, location_random_range) = {(location, location_random_range)}.'
         )
-        assert radius >= 0.0, (
-            f'The argument `radius` should be a non-negative number. '
-            f'Got radius = {radius}.'
-        )
+        assert (
+            radius >= 0.0
+        ), f'The argument `radius` should be a non-negative number. Got radius = {radius}.'
 
         if location is not None:
             location = np.asarray(location, dtype=np.float64)
 
         if location_random_range is None:
-            location_random_range = spaces.Box(low=location,
-                                               high=location,
-                                               dtype=np.float64)
+            location_random_range = spaces.Box(low=location, high=location, dtype=np.float64)
 
         self.location = location
         self.location_random_range = location_random_range
@@ -63,8 +60,10 @@ class Entity(ABC):
 
     def reset(self):
         location = self.location_random_range.sample()
-        self.location = location.clip(min=consts.TERRAIN_SPACE.low + 1.2 * self.radius,
-                                      max=consts.TERRAIN_SPACE.high - 1.2 * self.radius)
+        self.location = location.clip(
+            min=consts.TERRAIN_SPACE.low + 1.2 * self.radius,
+            max=consts.TERRAIN_SPACE.high - 1.2 * self.radius,
+        )
 
     def simulate(self, action):
         raise NotImplementedError
@@ -99,7 +98,7 @@ class Entity(ABC):
         if not isinstance(other, Entity):
             raise NotImplementedError
 
-        return self.distance(other) * (1 + 1E-6) < self.radius + other.radius + min_distance
+        return self.distance(other) * (1 + 1e-6) < self.radius + other.radius + min_distance
 
 
 class Obstacle(Entity):
@@ -113,9 +112,15 @@ class Obstacle(Entity):
         'transmittance': DEFAULT_OBSTACLE_TRANSMITTANCE,
     }
 
-    def __init__(self, location=None, location_random_range=None,  # pylint: disable=too-many-arguments
-                 radius=None, radius_random_range=None,
-                 transmittance=DEFAULT_OBSTACLE_TRANSMITTANCE):
+    # pylint: disable-next=too-many-arguments
+    def __init__(
+        self,
+        location=None,
+        location_random_range=None,
+        radius=None,
+        radius_random_range=None,
+        transmittance=DEFAULT_OBSTACLE_TRANSMITTANCE,
+    ):
 
         assert (radius is None, radius_random_range is None).count(True) == 1, (
             f'You should specify either a fixed radius or a random range for the radius. '
@@ -130,16 +135,16 @@ class Obstacle(Entity):
             radius = radius_random_range.sample()
 
         if radius_random_range is None:
-            radius_random_range = spaces.Box(low=np.asarray(radius),
-                                             high=np.asarray(radius),
-                                             dtype=np.float64)
+            radius_random_range = spaces.Box(
+                low=np.asarray(radius), high=np.asarray(radius), dtype=np.float64
+            )
 
         self.radius_random_range = radius_random_range
         self.transmittance = transmittance
 
-        super().__init__(location=location,
-                         location_random_range=location_random_range,
-                         radius=radius)
+        super().__init__(
+            location=location, location_random_range=location_random_range, radius=radius
+        )
 
     def state(self, private=False):
         return np.append(self.location, self.radius).astype(np.float64)
@@ -175,7 +180,9 @@ class Obstacle(Entity):
                     ray.norm = new_norm
                     if keep_tangential:
                         radius = ray.endpoint - self.location
-                        ray.vector = old_ray + radius * ((norm - new_norm) * half_chord / np.square(self.radius))
+                        ray.vector = old_ray + radius * (
+                            (norm - new_norm) * half_chord / np.square(self.radius)
+                        )
         return ray
 
 
@@ -183,8 +190,9 @@ class Sensor(Entity):
     STATE_DIM = STATE_DIM_PUBLIC = 3
     STATE_DIM_PRIVATE = 3
 
-    def __init__(self, location=None, location_random_range=None,
-                 radius=1.0, sight_range=DEFAULT_SIGHT_RANGE):
+    def __init__(
+        self, location=None, location_random_range=None, radius=1.0, sight_range=DEFAULT_SIGHT_RANGE
+    ):
 
         assert sight_range > 0.0, (
             f'The argument `sight_range` should be a positive number. '
@@ -193,18 +201,18 @@ class Sensor(Entity):
 
         self.sight_range = sight_range
 
-        super().__init__(location=location,
-                         location_random_range=location_random_range,
-                         radius=radius)
+        super().__init__(
+            location=location, location_random_range=location_random_range, radius=radius
+        )
 
-        self.state_space = self.state_space_public = spaces.Box(low=consts.TERRAIN_SPACE.low,
-                                                                high=consts.TERRAIN_SPACE.high,
-                                                                dtype=np.float64)
-        self.state_space_private = spaces.Box(low=np.append(consts.TERRAIN_SPACE.low,
-                                                            0).astype(np.float64),
-                                              high=np.append(consts.TERRAIN_SPACE.high,
-                                                             consts.TERRAIN_SIZE).astype(np.float64),
-                                              dtype=np.float64)
+        self.state_space = self.state_space_public = spaces.Box(
+            low=consts.TERRAIN_SPACE.low, high=consts.TERRAIN_SPACE.high, dtype=np.float64
+        )
+        self.state_space_private = spaces.Box(
+            low=np.append(consts.TERRAIN_SPACE.low, 0).astype(np.float64),
+            high=np.append(consts.TERRAIN_SPACE.high, consts.TERRAIN_SIZE).astype(np.float64),
+            dtype=np.float64,
+        )
 
     def state(self, private=False):
         return np.append(self.location, self.sight_range).astype(np.float64)
@@ -248,9 +256,17 @@ class Camera(Sensor, Obstacle):  # pylint: disable=too-many-instance-attributes
         'zooming_step': DEFAULT_CAMERA_ZOOMING_STEP,
     }
 
-    def __init__(self, location=None, location_random_range=None, radius=DEFAULT_CAMERA_RADIUS,  # pylint: disable=too-many-arguments
-                 min_viewing_angle=DEFAULT_CAMERA_MIN_VIEWING_ANGLE, max_sight_range=DEFAULT_SIGHT_RANGE,
-                 rotation_step=DEFAULT_CAMERA_ROTATION_STEP, zooming_step=DEFAULT_CAMERA_ZOOMING_STEP):
+    # pylint: disable-next=too-many-arguments
+    def __init__(
+        self,
+        location=None,
+        location_random_range=None,
+        radius=DEFAULT_CAMERA_RADIUS,
+        min_viewing_angle=DEFAULT_CAMERA_MIN_VIEWING_ANGLE,
+        max_sight_range=DEFAULT_SIGHT_RANGE,
+        rotation_step=DEFAULT_CAMERA_ROTATION_STEP,
+        zooming_step=DEFAULT_CAMERA_ZOOMING_STEP,
+    ):
 
         assert 0.0 < min_viewing_angle <= consts.MAX_CAMERA_VIEWING_ANGLE, (
             f'The argument `min_viewing_angle` within the range of (0.0, {consts.MAX_CAMERA_VIEWING_ANGLE}]. '
@@ -277,14 +293,18 @@ class Camera(Sensor, Obstacle):  # pylint: disable=too-many-instance-attributes
         self.boundary_outer = []
         self.obstacles = set()
 
-        super().__init__(location=location,
-                         location_random_range=location_random_range,
-                         radius=radius,
-                         sight_range=max_sight_range)
+        super().__init__(
+            location=location,
+            location_random_range=location_random_range,
+            radius=radius,
+            sight_range=max_sight_range,
+        )
 
-        self.action_space = spaces.Box(low=np.asarray([-self.rotation_step, -self.zooming_step]),
-                                       high=np.asarray([self.rotation_step, self.zooming_step]),
-                                       dtype=np.float64)
+        self.action_space = spaces.Box(
+            low=np.asarray([-self.rotation_step, -self.zooming_step]),
+            high=np.asarray([self.rotation_step, self.zooming_step]),
+            dtype=np.float64,
+        )
 
     @property
     def orientation(self):
@@ -295,40 +315,61 @@ class Camera(Sensor, Obstacle):  # pylint: disable=too-many-instance-attributes
         self._orientation = normalize_angle(value)
 
     def state(self, private=False):
-        state = np.concatenate([self.location, [self.radius],
-                                polar2cartesian(self.sight_range, self.orientation), [self.viewing_angle]])
+        state = np.concatenate(
+            [
+                self.location,
+                [self.radius],
+                polar2cartesian(self.sight_range, self.orientation),
+                [self.viewing_angle],
+            ]
+        )
         if private:
             state = np.append(state, [self.max_sight_range, self.rotation_step, self.zooming_step])
         return state.astype(np.float64)
 
     def reset(self):
         super().reset()
-        self.orientation = self.rotation_step * self.np_random.randint(low=0, high=360 / self.rotation_step)
-        self.viewing_angle = self.np_random.uniform(self.min_viewing_angle, consts.MAX_CAMERA_VIEWING_ANGLE)
+        self.orientation = self.rotation_step * self.np_random.randint(
+            low=0, high=360 / self.rotation_step
+        )
+        self.viewing_angle = self.np_random.uniform(
+            self.min_viewing_angle, consts.MAX_CAMERA_VIEWING_ANGLE
+        )
         self.sight_range = np.sqrt(self.area_product / self.viewing_angle)
 
-        self.boundary = [Vector2D(norm=self.max_sight_range, angle=angle, origin=self.location)
-                         for angle in np.linspace(-180.0, +180.0, num=360, endpoint=False)]
-        self.boundary_outer = [Vector2D(norm=self.max_sight_range, angle=angle, origin=self.location)
-                               for angle in np.linspace(-180.0, +180.0, num=360, endpoint=False)]
+        self.boundary = [
+            Vector2D(norm=self.max_sight_range, angle=angle, origin=self.location)
+            for angle in np.linspace(-180.0, +180.0, num=360, endpoint=False)
+        ]
+        self.boundary_outer = [
+            Vector2D(norm=self.max_sight_range, angle=angle, origin=self.location)
+            for angle in np.linspace(-180.0, +180.0, num=360, endpoint=False)
+        ]
         phis = np.linspace(-180.0, +180.0, num=361, endpoint=True)
         self.sight_range_func = interp1d(phis, self.max_sight_range * np.ones_like(phis))
 
     def simulate(self, action):
-        assert len(action) == consts.CAMERA_ACTION_DIM, (
-            f'Got unexpected camera action {action}.'
+        assert len(action) == consts.CAMERA_ACTION_DIM, f'Got unexpected camera action {action}.'
+
+        delta_angle, delta_viewing_angle = np.clip(
+            action, a_min=self.action_space.low, a_max=self.action_space.high
         )
 
-        delta_angle, delta_viewing_angle = np.clip(action, a_min=self.action_space.low, a_max=self.action_space.high)
-
         self.orientation = self.orientation + delta_angle
-        self.viewing_angle = np.clip(self.viewing_angle + delta_viewing_angle,
-                                     a_min=self.min_viewing_angle, a_max=consts.MAX_CAMERA_VIEWING_ANGLE)
+        self.viewing_angle = np.clip(
+            self.viewing_angle + delta_viewing_angle,
+            a_min=self.min_viewing_angle,
+            a_max=consts.MAX_CAMERA_VIEWING_ANGLE,
+        )
         self.sight_range = np.sqrt(self.area_product / self.viewing_angle)
 
     def add_obstacles(self, *obstacles):  # pylint: disable=too-many-locals
-        obstacles = set(filter(lambda obstacle: self.distance(obstacle) < self.max_sight_range + obstacle.radius,
-                               filter(lambda obstacle: obstacle is not self, obstacles)))
+        obstacles = set(
+            filter(
+                lambda obstacle: self.distance(obstacle) < self.max_sight_range + obstacle.radius,
+                filter(lambda obstacle: obstacle is not self, obstacles),
+            )
+        )
         self.obstacles.update(obstacles)
 
         boundary = self.boundary
@@ -339,34 +380,61 @@ class Camera(Sensor, Obstacle):  # pylint: disable=too-many-instance-attributes
 
             relative = obstacle - self
             if obstacle.radius > relative.norm:
-                boundary = [Vector2D(norm=0, angle=angle, origin=self.location)
-                            for angle in range(-180, 180, 90)]
-                boundary_outer = [Vector2D(norm=0, angle=angle, origin=self.location)
-                                  for angle in range(-180, 180, 90)]
+                boundary = [
+                    Vector2D(norm=0, angle=angle, origin=self.location)
+                    for angle in range(-180, 180, 90)
+                ]
+                boundary_outer = [
+                    Vector2D(norm=0, angle=angle, origin=self.location)
+                    for angle in range(-180, 180, 90)
+                ]
                 break
 
             half_opening_angle = arcsin_deg(obstacle.radius / relative.norm)
             max_rho = min(self.max_sight_range, relative.norm + obstacle.radius)
             angle_left = relative.angle - half_opening_angle
             angle_right = relative.angle + half_opening_angle
-            boundary.extend([
-                Vector2D(norm=self.max_sight_range, angle=angle_left - 0.01, origin=self.location),
-                Vector2D(norm=self.max_sight_range, angle=angle_left + 0.01, origin=self.location),
-                Vector2D(norm=self.max_sight_range, angle=angle_right - 0.01, origin=self.location),
-                Vector2D(norm=self.max_sight_range, angle=angle_right + 0.01, origin=self.location)
-            ] + [
-                Vector2D(norm=max_rho, angle=angle, origin=self.location)
-                for angle in np.linspace(angle_left, angle_right, num=max(16, int(2 * half_opening_angle)) + 1,
-                                         endpoint=True)
-            ])
+            boundary.extend(
+                [
+                    Vector2D(
+                        norm=self.max_sight_range, angle=angle_left - 0.01, origin=self.location
+                    ),
+                    Vector2D(
+                        norm=self.max_sight_range, angle=angle_left + 0.01, origin=self.location
+                    ),
+                    Vector2D(
+                        norm=self.max_sight_range, angle=angle_right - 0.01, origin=self.location
+                    ),
+                    Vector2D(
+                        norm=self.max_sight_range, angle=angle_right + 0.01, origin=self.location
+                    ),
+                ]
+                + [
+                    Vector2D(norm=max_rho, angle=angle, origin=self.location)
+                    for angle in np.linspace(
+                        angle_left,
+                        angle_right,
+                        num=max(16, int(2 * half_opening_angle)) + 1,
+                        endpoint=True,
+                    )
+                ]
+            )
 
-            boundary_outer.extend([
-                Vector2D(norm=max_rho, angle=angle, origin=self.location)
-                for angle in np.linspace(angle_left, angle_right, num=max(16, int(2 * half_opening_angle)) + 1,
-                                         endpoint=True)
-            ])
+            boundary_outer.extend(
+                [
+                    Vector2D(norm=max_rho, angle=angle, origin=self.location)
+                    for angle in np.linspace(
+                        angle_left,
+                        angle_right,
+                        num=max(16, int(2 * half_opening_angle)) + 1,
+                        endpoint=True,
+                    )
+                ]
+            )
 
-            near_rho = min(self.max_sight_range, np.sqrt(np.square(relative.norm) + np.square(obstacle.radius)))
+            near_rho = min(
+                self.max_sight_range, np.sqrt(np.square(relative.norm) + np.square(obstacle.radius))
+            )
             far_rho = self.max_sight_range
 
             near = Vector2D(norm=near_rho, angle=angle_left, origin=self.location)
@@ -438,7 +506,7 @@ class Camera(Sensor, Obstacle):  # pylint: disable=too-many-instance-attributes
 
         if self.np_random.binomial(1, transmittance) != 0:
             return True
-        return relative.norm <= self.sight_range_at(relative.angle) * (1 + 1E-6)
+        return relative.norm <= self.sight_range_at(relative.angle) * (1 + 1e-6)
 
     def sight_range_at(self, angle, outer=False):
         angle = normalize_angle(angle)
@@ -450,7 +518,9 @@ class Camera(Sensor, Obstacle):  # pylint: disable=too-many-instance-attributes
         assert 0.0 < angle_right - angle_left <= 360.0
 
         normalized_angle_left = normalize_angle(angle_left)
-        angle_left, angle_right = normalized_angle_left, normalized_angle_left + (angle_right - angle_left)
+        angle_left, angle_right = normalized_angle_left, normalized_angle_left + (
+            angle_right - angle_left
+        )
 
         if outer:
             phis_all = self.sight_range_outer_func.x
@@ -470,7 +540,9 @@ class Camera(Sensor, Obstacle):  # pylint: disable=too-many-instance-attributes
             rhos = np.concatenate([rhos_all[mask1], rhos_all[mask2]])
 
         phis = np.concatenate([[angle_left], phis, [angle_right]])
-        rhos = np.concatenate([[self.sight_range_at(angle_left)], rhos, [self.sight_range_at(angle_right)]])
+        rhos = np.concatenate(
+            [[self.sight_range_at(angle_left)], rhos, [self.sight_range_at(angle_right)]]
+        )
 
         return phis.astype(np.float64), rhos.astype(np.float64)
 
@@ -497,8 +569,13 @@ class Target(Sensor):  # pylint: disable=too-many-instance-attributes
         'step_size': DEFAULT_TARGET_STEP_SIZE,
     }
 
-    def __init__(self, location=None, location_random_range=None,
-                 sight_range=DEFAULT_SIGHT_RANGE, step_size=DEFAULT_TARGET_STEP_SIZE):
+    def __init__(
+        self,
+        location=None,
+        location_random_range=None,
+        sight_range=DEFAULT_SIGHT_RANGE,
+        step_size=DEFAULT_TARGET_STEP_SIZE,
+    ):
 
         assert step_size > 0.0, (
             f'The argument `step_size` should be a positive number. '
@@ -514,8 +591,12 @@ class Target(Sensor):  # pylint: disable=too-many-instance-attributes
 
         self.is_colliding = False
 
-        super().__init__(location=location, location_random_range=location_random_range,
-                         radius=consts.TARGET_RADIUS, sight_range=sight_range)
+        super().__init__(
+            location=location,
+            location_random_range=location_random_range,
+            radius=consts.TARGET_RADIUS,
+            sight_range=sight_range,
+        )
 
     @property
     def step_size(self):
@@ -523,10 +604,9 @@ class Target(Sensor):  # pylint: disable=too-many-instance-attributes
 
     @step_size.setter
     def step_size(self, value):
-        assert value > 0.0, (
-            f'The argument `step_size` should be a positive number. '
-            f'Got step_size = {value}.'
-        )
+        assert (
+            value > 0.0
+        ), f'The argument `step_size` should be a positive number. Got step_size = {value}.'
         self._step_size = value
         self._action_space = None
 
@@ -542,9 +622,11 @@ class Target(Sensor):  # pylint: disable=too-many-instance-attributes
     @property
     def action_space(self):
         if self._action_space is None:
-            self._action_space = spaces.Box(low=np.asarray([-self.step_size, -self.step_size]),
-                                            high=np.asarray([self.step_size, self.step_size]),
-                                            dtype=np.float64)
+            self._action_space = spaces.Box(
+                low=np.asarray([-self.step_size, -self.step_size]),
+                high=np.asarray([self.step_size, self.step_size]),
+                dtype=np.float64,
+            )
         return self._action_space
 
     @property
@@ -554,7 +636,9 @@ class Target(Sensor):  # pylint: disable=too-many-instance-attributes
     def state(self, private=False):
         state = np.append(self.location, [self.sight_range, self.is_loaded])
         if private:
-            state = np.concatenate([state, [self.step_size, self.capacity], self.goal_bits, self.empty_bits])
+            state = np.concatenate(
+                [state, [self.step_size, self.capacity], self.goal_bits, self.empty_bits]
+            )
         return state.astype(np.float64)
 
     def reset(self):
@@ -564,9 +648,7 @@ class Target(Sensor):  # pylint: disable=too-many-instance-attributes
         self.is_colliding = False
 
     def simulate(self, action):
-        assert len(action) == consts.TARGET_ACTION_DIM, (
-            f'Got unexpected target action: {action}.'
-        )
+        assert len(action) == consts.TARGET_ACTION_DIM, f'Got unexpected target action: {action}.'
 
         step = Vector2D(vector=action, origin=self.location)
         if step.norm > self.step_size:
@@ -584,18 +666,24 @@ class Target(Sensor):  # pylint: disable=too-many-instance-attributes
             for obstacle in obstacles:
                 step = obstacle.obstruct(step, keep_tangential=True)
 
-        self.location = step.endpoint.clip(min=consts.TERRAIN_SPACE.low, max=consts.TERRAIN_SPACE.high)
+        self.location = step.endpoint.clip(
+            min=consts.TERRAIN_SPACE.low, max=consts.TERRAIN_SPACE.high
+        )
 
-        self.is_colliding = (not np.allclose(self.location, desired_location, rtol=0.0, atol=1E-6))
+        self.is_colliding = not np.allclose(self.location, desired_location, rtol=0.0, atol=1e-6)
 
     @classmethod
-    def add_obstacles(cls, *obstacles, epsilon=1E-5):  # pylint: disable=arguments-differ
+    def add_obstacles(cls, *obstacles, epsilon=1e-5):  # pylint: disable=arguments-differ
         for obstacle in obstacles:
             if obstacle in cls.OBSTACLES:
                 continue
 
-            ix_low, iy_low = cls.SPATIAL_HASHMAP.hash_key(obstacle.location - obstacle.radius - epsilon)
-            ix_high, iy_high = cls.SPATIAL_HASHMAP.hash_key(obstacle.location + obstacle.radius + epsilon)
+            ix_low, iy_low = cls.SPATIAL_HASHMAP.hash_key(
+                obstacle.location - obstacle.radius - epsilon
+            )
+            ix_high, iy_high = cls.SPATIAL_HASHMAP.hash_key(
+                obstacle.location + obstacle.radius + epsilon
+            )
             for ix in range(ix_low, ix_high + 1):
                 for iy in range(iy_low, iy_high + 1):
                     cls.SPATIAL_HASHMAP[ix, iy].add(obstacle)

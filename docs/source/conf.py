@@ -12,6 +12,8 @@
 #
 import os
 import sys
+
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
@@ -110,7 +112,7 @@ html_css_files = [
 
 extlinks = {
     'gitcode': ('https://github.com/XuehaiPan/mate/blob/HEAD/%s', '%s'),
-    'issue': ('https://github.com/XuehaiPan/mate/issues/%s', 'issue %s')
+    'issue': ('https://github.com/XuehaiPan/mate/issues/%s', 'issue %s'),
 }
 
 # -- Options for HTMLHelp output ---------------------------------------------
@@ -125,11 +127,9 @@ latex_elements = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
-
     # The font size ('10pt', '11pt' or '12pt').
     #
     # 'pointsize': '10pt',
-
     # Additional stuff for the LaTeX preamble.
     #
     'preamble': r"""
@@ -137,7 +137,6 @@ latex_elements = {
     \usepackage{tikz}
     \usetikzlibrary{arrows.meta,calligraphy,decorations,fadings}
     """,
-
     # Latex figure (float) alignment
     #
     # 'figure_align': 'htbp',
@@ -147,8 +146,13 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'mate.tex', 'Multi-Agent Tracking Environment Documentation',
-     'Xuehai Pan', 'manual'),
+    (
+        master_doc,
+        'mate.tex',
+        'Multi-Agent Tracking Environment Documentation',
+        'Xuehai Pan',
+        'manual',
+    ),
 ]
 
 
@@ -156,10 +160,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [
-    (master_doc, 'mate', 'Multi-Agent Tracking Environment Documentation',
-     [author], 1)
-]
+man_pages = [(master_doc, 'mate', 'Multi-Agent Tracking Environment Documentation', [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -168,9 +169,15 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'mate', 'Multi-Agent Tracking Environment Documentation',
-     author, 'mate', 'The Multi-Agent Tracking Environment.',
-     'Miscellaneous'),
+    (
+        master_doc,
+        'mate',
+        'Multi-Agent Tracking Environment Documentation',
+        author,
+        'mate',
+        'The Multi-Agent Tracking Environment.',
+        'Miscellaneous',
+    ),
 ]
 
 

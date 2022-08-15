@@ -1,12 +1,12 @@
 # pylint: disable=missing-module-docstring
 
 from functools import partial
-from typing import Iterable, Callable, Union
+from typing import Callable, Iterable, Union
 
 import gym
 
 from mate.utils import Message
-from mate.wrappers.typing import WrapperMeta, MateEnvironmentType, assert_mate_environment
+from mate.wrappers.typing import MateEnvironmentType, WrapperMeta, assert_mate_environment
 
 
 class MessageFilter(gym.Wrapper, metaclass=WrapperMeta):
@@ -21,13 +21,15 @@ class MessageFilter(gym.Wrapper, metaclass=WrapperMeta):
         this to add channel signal noises etc.
     """
 
-    def __init__(self, env: MateEnvironmentType,
-                 filter: Callable[[MateEnvironmentType, Message], bool]) -> None:  # pylint: disable=redefined-builtin
+    def __init__(
+        self,
+        env: MateEnvironmentType,
+        filter: Callable[[MateEnvironmentType, Message], bool],  # pylint: disable=redefined-builtin
+    ) -> None:
         assert_mate_environment(env)
-        assert callable(filter), (
-            f'The argument `filter` should be a callable function. '
-            f'Got filter = {filter:!r}.'
-        )
+        assert callable(
+            filter
+        ), f'The argument `filter` should be a callable function. Got filter = {filter!r}.'
 
         super().__init__(env)
 

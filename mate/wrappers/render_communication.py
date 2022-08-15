@@ -1,12 +1,12 @@
 # pylint: disable=missing-module-docstring
 
-from typing import List, Tuple, Dict, Union, Optional, Any
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import gym
 import numpy as np
 
 from mate import constants as consts
-from mate.wrappers.typing import WrapperMeta, MateEnvironmentType, assert_mate_environment
+from mate.wrappers.typing import MateEnvironmentType, WrapperMeta, assert_mate_environment
 
 
 class RenderCommunication(gym.Wrapper, metaclass=WrapperMeta):
@@ -14,10 +14,9 @@ class RenderCommunication(gym.Wrapper, metaclass=WrapperMeta):
 
     def __init__(self, env: MateEnvironmentType, duration: Optional[int] = 20) -> None:
         assert_mate_environment(env)
-        assert duration > 0, (
-            f'The argument `duration` should be a positive integer. '
-            f'Got duration = {duration}.'
-        )
+        assert (
+            duration > 0
+        ), f'The argument `duration` should be a positive integer. Got duration = {duration}.'
 
         super().__init__(env)
 
@@ -40,10 +39,11 @@ class RenderCommunication(gym.Wrapper, metaclass=WrapperMeta):
 
         return self.env.reset(**kwargs)
 
-    def step(self, action: Tuple[np.ndarray, np.ndarray]) -> Tuple[Tuple[np.ndarray, np.ndarray],
-                                                                   Tuple[float, float],
-                                                                   bool,
-                                                                   Tuple[List[dict], List[dict]]]:
+    def step(
+        self, action: Tuple[np.ndarray, np.ndarray]
+    ) -> Tuple[
+        Tuple[np.ndarray, np.ndarray], Tuple[float, float], bool, Tuple[List[dict], List[dict]]
+    ]:
 
         self.camera_comm_matrix = np.maximum(self.camera_comm_matrix - 1, 0, dtype=np.int64)
         self.target_comm_matrix = np.maximum(self.target_comm_matrix - 1, 0, dtype=np.int64)
@@ -56,7 +56,8 @@ class RenderCommunication(gym.Wrapper, metaclass=WrapperMeta):
 
         return self.env.step(action)
 
-    def callback(self, unwrapped: MateEnvironmentType, mode: str) -> None:  # pylint: disable=unused-argument
+    # pylint: disable-next=unused-argument
+    def callback(self, unwrapped: MateEnvironmentType, mode: str) -> None:
         """Draw communication messages as arrows."""
 
         import mate.assets.pygletrendering as rendering  # pylint: disable=import-outside-toplevel
@@ -95,18 +96,22 @@ class RenderCommunication(gym.Wrapper, metaclass=WrapperMeta):
             for recipient in range(unwrapped.num_cameras):
                 remaining = self.camera_comm_matrix[sender, recipient]
                 if remaining > 0:
-                    draw_arrow(unwrapped.cameras[sender].location,
-                               unwrapped.cameras[recipient].location,
-                               color=(0.0, 0.0, 1.0, min(1.0, 1.2 * remaining / self.duration)),
-                               bidirectional=(self.camera_comm_matrix[recipient, sender] > 0))
+                    draw_arrow(
+                        unwrapped.cameras[sender].location,
+                        unwrapped.cameras[recipient].location,
+                        color=(0.0, 0.0, 1.0, min(1.0, 1.2 * remaining / self.duration)),
+                        bidirectional=(self.camera_comm_matrix[recipient, sender] > 0),
+                    )
 
         for sender in range(unwrapped.num_targets):
             for recipient in range(unwrapped.num_targets):
                 remaining = self.target_comm_matrix[sender, recipient]
                 if remaining > 0:
-                    draw_arrow(unwrapped.targets[sender].location,
-                               unwrapped.targets[recipient].location,
-                               color=(1.0, 0.0, 0.0, min(1.0, 1.2 * remaining / self.duration)),
-                               bidirectional=(self.target_comm_matrix[recipient, sender] > 0))
+                    draw_arrow(
+                        unwrapped.targets[sender].location,
+                        unwrapped.targets[recipient].location,
+                        color=(1.0, 0.0, 0.0, min(1.0, 1.2 * remaining / self.duration)),
+                        bidirectional=(self.target_comm_matrix[recipient, sender] > 0),
+                    )
 
         unwrapped.viewer.onetime_geoms[:] = geoms + unwrapped.viewer.onetime_geoms

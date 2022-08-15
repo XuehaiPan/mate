@@ -3,4 +3,5 @@
 from examples.hrl.ippo.camera.agent import HRLIPPOCameraAgent
 from examples.hrl.ippo.camera.config import config
 
+
 CameraAgent = HRLIPPOCameraAgent

@@ -7,17 +7,28 @@ import os
 import random
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Any, Optional
 
 import numpy as np
 
 
-__all__ = ['seed_everything',
-           'RAD2DEG', 'DEG2RAD',
-           'sin_deg', 'cos_deg', 'tan_deg',
-           'arcsin_deg', 'arccos_deg', 'arctan2_deg',
-           'cartesian2polar', 'polar2cartesian', 'normalize_angle',
-           'Vector2D', 'Team', 'Message']
+__all__ = [
+    'seed_everything',
+    'RAD2DEG',
+    'DEG2RAD',
+    'sin_deg',
+    'cos_deg',
+    'tan_deg',
+    'arcsin_deg',
+    'arccos_deg',
+    'arctan2_deg',
+    'cartesian2polar',
+    'polar2cartesian',
+    'normalize_angle',
+    'Vector2D',
+    'Team',
+    'Message',
+]
 
 
 def seed_everything(seed: int) -> None:
@@ -297,7 +308,6 @@ class Message:
 
 
 class SpatialHashmap(defaultdict):  # pylint: disable=missing-class-docstring
-
     def __init__(self, step):
         super().__init__(set)
 

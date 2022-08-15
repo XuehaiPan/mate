@@ -6,13 +6,14 @@ from typing import List, Optional
 import numpy as np
 from gym.utils import seeding
 
-from mate.agents.base import CameraAgentBase, TargetAgentBase, AgentBase, AgentType
+from mate.agents.base import AgentBase, AgentType, CameraAgentBase, TargetAgentBase
 
 
 __all__ = ['MixtureCameraAgent', 'MixtureTargetAgent']
 
 
-class MixtureAgentMixIn(AgentBase, metaclass=ABCMeta):  # pylint: disable=too-many-instance-attributes
+# pylint: disable-next=too-many-instance-attributes
+class MixtureAgentMixIn(AgentBase, metaclass=ABCMeta):
     """Helper class for mixture of agents.
 
     Randomly choose a underlying agent in candidates at episode start.
@@ -55,7 +56,9 @@ class MixtureAgentMixIn(AgentBase, metaclass=ABCMeta):  # pylint: disable=too-ma
         seed = self.np_random.randint(np.iinfo(int).max)
         mixture_seed = self.np_random.randint(np.iinfo(int).max)
 
-        clone = type(self)(candidates=candidates, weights=self.weights, mixture_seed=mixture_seed, seed=seed)
+        clone = type(self)(
+            candidates=candidates, weights=self.weights, mixture_seed=mixture_seed, seed=seed
+        )
         return clone
 
     def spawn(self, num_agents: int) -> List[AgentType]:
@@ -90,8 +93,7 @@ class MixtureAgentMixIn(AgentBase, metaclass=ABCMeta):  # pylint: disable=too-ma
         return seeds
 
     def seed_mixture(self, seed: Optional[int] = None) -> List[int]:
-        """Set seed for the random number generator of the policy mixture.
-        """
+        """Set seed for the random number generator of the policy mixture."""
 
         self._np_random_mixture, seed = seeding.np_random(seed=seed)
         return [seed]

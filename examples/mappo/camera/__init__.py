@@ -3,4 +3,5 @@
 from examples.mappo.camera.agent import MAPPOCameraAgent
 from examples.mappo.camera.config import config
 
+
 CameraAgent = MAPPOCameraAgent

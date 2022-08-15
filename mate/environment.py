@@ -7,7 +7,7 @@ import itertools
 import os
 from collections import OrderedDict, defaultdict, deque
 from pathlib import Path
-from typing import List, Tuple, Iterable, Dict, Callable, Union, Optional, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import gym
 import numpy as np
@@ -15,8 +15,8 @@ from gym import spaces
 from gym.utils import EzPickle, seeding
 
 from mate import constants as consts
-from mate.entities import Camera, Target, Obstacle
-from mate.utils import arctan2_deg, polar2cartesian, normalize_angle, Message, Team
+from mate.entities import Camera, Obstacle, Target
+from mate.utils import Message, Team, arctan2_deg, normalize_angle, polar2cartesian
 
 
 __all__ = ['ASSETS_DIR', 'DEFAULT_CONFIG_FILE', 'read_config', 'EnvMeta', 'MultiAgentTracking']
@@ -49,28 +49,38 @@ def _did_you_mean(path: Union[str, Path]) -> Tuple[str, ...]:
     path = str(path)
 
     def edit_distance(str1: str, str2: str) -> int:
-        dis = {**{(i, 0): i for i in range(len(str1) + 1)},
-               **{(0, j): j for j in range(len(str2) + 1)}}
+        dis = {
+            **{(i, 0): i for i in range(len(str1) + 1)},
+            **{(0, j): j for j in range(len(str2) + 1)},
+        }
         for i, j in itertools.product(range(1, len(str1) + 1), range(1, len(str2) + 1)):
-            dis[i, j] = min(dis[i - 1, j - 1] + int(str1[i - 1] != str2[j - 1]),
-                            dis[i - 1, j] + 1,
-                            dis[i, j - 1] + 1)
+            dis[i, j] = min(
+                dis[i - 1, j - 1] + int(str1[i - 1] != str2[j - 1]),
+                dis[i - 1, j] + 1,
+                dis[i, j - 1] + 1,
+            )
         return dis[len(str1), len(str2)]
 
-    candidates = tuple(itertools.starmap(
-        os.path.join,
-        sorted(
-            map(
-                os.path.split,
-                itertools.chain.from_iterable(
-                    DIR.glob(pattern)
-                    for pattern in ('*.yaml', '*.yml', '*.json')
-                    for DIR in (Path(os.getcwd()), ASSETS_DIR)
-                )
+    candidates = tuple(
+        itertools.starmap(
+            os.path.join,
+            sorted(
+                map(
+                    os.path.split,
+                    itertools.chain.from_iterable(
+                        DIR.glob(pattern)
+                        for pattern in ('*.yaml', '*.yml', '*.json')
+                        for DIR in (Path(os.getcwd()), ASSETS_DIR)
+                    ),
+                ),
+                key=lambda split: (
+                    edit_distance(split[1], path),
+                    split[0] == str(ASSETS_DIR),
+                    split[1],
+                ),
             ),
-            key=lambda split: (edit_distance(split[1], path), split[0] == str(ASSETS_DIR), split[1])
         )
-    ))
+    )
 
     return candidates
 
@@ -88,19 +98,24 @@ def _deep_update(dict1, dict2, prefix=''):
     return dict1
 
 
-def read_config(config_or_path: Optional[Union[Dict[str, Any], str]], **kwargs) -> Dict[str, Any]:  # pylint: disable=too-many-branches
+# pylint: disable-next=too-many-branches
+def read_config(config_or_path: Optional[Union[Dict[str, Any], str]], **kwargs) -> Dict[str, Any]:
     """Load configuration from a dictionary mapping or a JSON/YAML file."""
 
     if isinstance(config_or_path, str) and not os.path.exists(config_or_path):
         for candidate in (Path(os.getcwd()) / config_or_path, ASSETS_DIR / config_or_path):
             if candidate.is_file():
-                gym.logger.info('Found configuration file "%s" in assets directory.', config_or_path)
+                gym.logger.info(
+                    'Found configuration file "%s" in assets directory.', config_or_path
+                )
                 config_or_path = candidate
                 break
         else:
             candidates = _did_you_mean(config_or_path)
-            raise ValueError(f'Cannot found the configuration file "{config_or_path}". '
-                             f'Did you mean: "{candidates[0]}"?')
+            raise ValueError(
+                f'Cannot found the configuration file "{config_or_path}". '
+                f'Did you mean: "{candidates[0]}"?'
+            )
 
     if not isinstance(config_or_path, dict):
         config = None
@@ -112,14 +127,18 @@ def read_config(config_or_path: Optional[Union[Dict[str, Any], str]], **kwargs) 
                 with open(config_or_path, mode='rt', encoding='UTF-8') as file:
                     if file_ext == '.json':
                         import json  # pylint: disable=import-outside-toplevel
+
                         config = json.load(file)
                     else:
                         import yaml  # pylint: disable=import-outside-toplevel
+
                         config = yaml.load(file, yaml.SafeLoader)
         if config is None:
-            raise ValueError(f'The configuration should be a dictionary mapping '
-                             f'or a path to a readable JSON/YAML file. '
-                             f'Got {config_or_path!r}.')
+            raise ValueError(
+                f'The configuration should be a dictionary mapping '
+                f'or a path to a readable JSON/YAML file. '
+                f'Got {config_or_path!r}.'
+            )
     else:
         config = config_or_path
 
@@ -136,20 +155,23 @@ def read_config(config_or_path: Optional[Union[Dict[str, Any], str]], **kwargs) 
             if len(low) == 1 and len(high) == 1:
                 low, high = low[0], high[0]
 
-        return spaces.Box(low=np.array(low, dtype=np.float64, copy=True),
-                          high=np.array(high, dtype=np.float64, copy=True),
-                          dtype=np.float64)
+        return spaces.Box(
+            low=np.array(low, dtype=np.float64, copy=True),
+            high=np.array(high, dtype=np.float64, copy=True),
+            dtype=np.float64,
+        )
 
     for entity in ('camera', 'obstacle', 'target'):
         config.setdefault(entity, {})
         subconfig = config[entity]
         if 'location' in subconfig:
-            subconfig['location'] = list(map(
-                lambda array: np.asarray(array, dtype=np.float64),
-                subconfig['location']
-            ))
+            subconfig['location'] = list(
+                map(lambda array: np.asarray(array, dtype=np.float64), subconfig['location'])
+            )
         if 'location_random_range' in subconfig:
-            subconfig['location_random_range'] = list(map(to_box, subconfig['location_random_range']))
+            subconfig['location_random_range'] = list(
+                map(to_box, subconfig['location_random_range'])
+            )
         if 'radius_random_range' in subconfig:
             subconfig['radius_random_range'] = to_box(subconfig['radius_random_range'])
 
@@ -169,10 +191,14 @@ def validate_config(config: Dict[str, Any]) -> None:  # pylint: disable=too-many
         gym.logger.warn('Missing key "reward_type", set to "dense".')
         config['reward_type'] = 'dense'
     if config['reward_type'] not in ('dense', 'sparse'):
-        raise ValueError(f'Invalid reward type {config["reward_type"]}. Expect one of {("dense", "sparse")}')
+        raise ValueError(
+            f'Invalid reward type {config["reward_type"]}. Expect one of {("dense", "sparse")}'
+        )
 
     if 'target' not in config:
-        raise ValueError('Missing key "target". There must be at least one target in the environment.')
+        raise ValueError(
+            'Missing key "target". There must be at least one target in the environment.'
+        )
 
     target = config['target']
     num_targets = len(target.get('location', [])) + len(target.get('location_random_range', []))
@@ -182,15 +208,19 @@ def validate_config(config: Dict[str, Any]) -> None:  # pylint: disable=too-many
     if 'num_cargoes_per_target' not in config:
         raise ValueError('Missing key "num_cargoes_per_target".')
     if config['num_cargoes_per_target'] < consts.NUM_WAREHOUSES:
-        raise ValueError(f'`num_cargoes_per_target` should be no less than {consts.NUM_WAREHOUSES}. '
-                         f'Got {config["num_cargoes_per_target"]}.')
+        raise ValueError(
+            f'`num_cargoes_per_target` should be no less than {consts.NUM_WAREHOUSES}. '
+            f'Got {config["num_cargoes_per_target"]}.'
+        )
 
     if 'high_capacity_target_split' not in config:
         gym.logger.warn('Missing key "high_capacity_target_split", set to 0.5.')
         config['high_capacity_target_split'] = 0.5
     if not 0.0 <= config['high_capacity_target_split'] <= 1.0:
-        raise ValueError(f'`high_capacity_target_split` must be between 0 and 1. '
-                         f'Got {config["high_capacity_target_split"]}.')
+        raise ValueError(
+            f'`high_capacity_target_split` must be between 0 and 1. '
+            f'Got {config["high_capacity_target_split"]}.'
+        )
 
     if 'targets_start_with_cargoes' not in config:
         gym.logger.warn('Missing key "targets_start_with_cargoes", set to True.')
@@ -201,8 +231,9 @@ def validate_config(config: Dict[str, Any]) -> None:  # pylint: disable=too-many
         gym.logger.warn('Missing key "bounty_factor", set to 1.0.')
         config['bounty_factor'] = 1.0
     if not config['bounty_factor'] >= 0.0:
-        raise ValueError(f'`bounty_factor` must be a non-negative number. '
-                         f'Got {config["bounty_factor"]}.')
+        raise ValueError(
+            f'`bounty_factor` must be a non-negative number. Got {config["bounty_factor"]}.'
+        )
 
     if 'shuffle_entities' not in config:
         gym.logger.warn('Missing key "shuffle_entities", set to True.')
@@ -217,8 +248,10 @@ def validate_config(config: Dict[str, Any]) -> None:  # pylint: disable=too-many
                     gym.logger.warn(f'Missing key "{entity}/{key}", set to {default}.')
                     config[entity][key] = default
                 if not config[entity][key] > 0.0:
-                    raise ValueError(f'`{entity}/{key}` must be a positive number. '
-                                     f'Got {config[entity][key]}.')
+                    raise ValueError(
+                        f'`{entity}/{key}` must be a positive number. '
+                        f'Got {config[entity][key]}.'
+                    )
 
 
 class EnvMeta(type(gym.Env)):
@@ -236,8 +269,8 @@ class EnvMeta(type(gym.Env)):
         return False
 
 
-class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance-attributes,too-many-public-methods
-                         metaclass=EnvMeta):
+# pylint: disable-next=too-many-instance-attributes,too-many-public-methods
+class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
     """The main class of the Multi-Agent Tracking Environment. It encapsulates
     an environment with arbitrary behind-the-scenes dynamics. This environment
     is partially observed for both teams.
@@ -278,7 +311,8 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
     DEFAULT_CONFIG_FILE = DEFAULT_CONFIG_FILE
     """The default configuration file."""
 
-    def __init__(self, config: Optional[Union[Dict[str, Any], str]] = None, **kwargs) -> None:  # pylint: disable=too-many-statements
+    # pylint: disable-next=too-many-statements
+    def __init__(self, config: Optional[Union[Dict[str, Any], str]] = None, **kwargs) -> None:
         """Initialize the Multi-Agent Tracking Environment from a dictionary
         mapping or a JSON/YAML file.
 
@@ -327,7 +361,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             else:
                 low = np.min([space.low for space in space_list], axis=0)
                 high = np.min([space.high for space in space_list], axis=0)
-            return spaces.Box(low=low.astype(np.float64), high=high.astype(np.float64), dtype=np.float64)
+            return spaces.Box(
+                low=low.astype(np.float64), high=high.astype(np.float64), dtype=np.float64
+            )
 
         def make_from_config(entity_class):
             common_kwargs = config.get(entity_class.__name__.lower(), {}).copy()
@@ -337,7 +373,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             for location in locations:
                 entities.append(entity_class(location=location, **common_kwargs))
             for location_random_range in location_random_ranges:
-                entities.append(entity_class(location_random_range=location_random_range, **common_kwargs))
+                entities.append(
+                    entity_class(location_random_range=location_random_range, **common_kwargs)
+                )
 
             state_space_public = entity_class.state_space_public
             state_space_private = entity_class.state_space_private
@@ -345,12 +383,18 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
 
             return entities, state_space_public, state_space_private, action_space
 
-        (self.cameras_ordered,
-         self.camera_state_space_public, self.camera_state_space_private,
-         self.camera_action_space) = make_from_config(Camera)
-        (self.targets_ordered,
-         self.target_state_space_public, self.target_state_space_private,
-         self.target_action_space) = make_from_config(Target)
+        (
+            self.cameras_ordered,
+            self.camera_state_space_public,
+            self.camera_state_space_private,
+            self.camera_action_space,
+        ) = make_from_config(Camera)
+        (
+            self.targets_ordered,
+            self.target_state_space_public,
+            self.target_state_space_private,
+            self.target_action_space,
+        ) = make_from_config(Target)
         self.obstacles_ordered, self.obstacle_state_space, _, _ = make_from_config(Obstacle)
 
         self.cameras = list(self.cameras_ordered)
@@ -362,67 +406,99 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             f'Got num_targets = {self.num_targets}.'
         )
         if self.num_cameras == 0:
-            self.camera_action_space = spaces.Box(low=np.zeros(consts.CAMERA_ACTION_DIM, dtype=np.float64),
-                                                  high=np.zeros(consts.CAMERA_ACTION_DIM, dtype=np.float64),
-                                                  dtype=np.float64)
+            self.camera_action_space = spaces.Box(
+                low=np.zeros(consts.CAMERA_ACTION_DIM, dtype=np.float64),
+                high=np.zeros(consts.CAMERA_ACTION_DIM, dtype=np.float64),
+                dtype=np.float64,
+            )
 
-        self.camera_joint_action_space = spaces.Tuple(spaces=(self.camera_action_space,) * self.num_cameras)
-        self.target_joint_action_space = spaces.Tuple(spaces=(self.target_action_space,) * self.num_targets)
-        self.action_space = spaces.Tuple(spaces=(self.camera_joint_action_space,
-                                                 self.target_joint_action_space))
+        self.camera_joint_action_space = spaces.Tuple(
+            spaces=(self.camera_action_space,) * self.num_cameras
+        )
+        self.target_joint_action_space = spaces.Tuple(
+            spaces=(self.target_action_space,) * self.num_targets
+        )
+        self.action_space = spaces.Tuple(
+            spaces=(self.camera_joint_action_space, self.target_joint_action_space)
+        )
 
         numbers = (self.num_cameras, self.num_targets, self.num_obstacles)
         self.camera_observation_space = consts.camera_observation_space_of(*numbers)
         self.target_observation_space = consts.target_observation_space_of(*numbers)
-        self.camera_joint_observation_space = spaces.Tuple(spaces=(self.camera_observation_space,) * self.num_cameras)
-        self.target_joint_observation_space = spaces.Tuple(spaces=(self.target_observation_space,) * self.num_targets)
-        self.observation_space = spaces.Tuple(spaces=(self.camera_joint_observation_space,
-                                                      self.target_joint_observation_space))
+        self.camera_joint_observation_space = spaces.Tuple(
+            spaces=(self.camera_observation_space,) * self.num_cameras
+        )
+        self.target_joint_observation_space = spaces.Tuple(
+            spaces=(self.target_observation_space,) * self.num_targets
+        )
+        self.observation_space = spaces.Tuple(
+            spaces=(self.camera_joint_observation_space, self.target_joint_observation_space)
+        )
 
         self.state_space = spaces.Box(
             low=np.concatenate(
-                [consts.PRESERVED_SPACE.low] +
-                [consts.CAMERA_STATE_SPACE_PRIVATE.low] * self.num_cameras +
-                [consts.TARGET_STATE_SPACE_PRIVATE.low] * self.num_targets +
-                [consts.OBSTACLE_STATE_SPACE.low] * self.num_obstacles +
-                [[0.0] * (2 * self.num_targets + self.num_warehouses * self.num_warehouses)]
+                [consts.PRESERVED_SPACE.low]
+                + [consts.CAMERA_STATE_SPACE_PRIVATE.low] * self.num_cameras
+                + [consts.TARGET_STATE_SPACE_PRIVATE.low] * self.num_targets
+                + [consts.OBSTACLE_STATE_SPACE.low] * self.num_obstacles
+                + [[0.0] * (2 * self.num_targets + self.num_warehouses * self.num_warehouses)]
             ).astype(np.float64),
             high=np.concatenate(
-                [consts.PRESERVED_SPACE.high] +
-                [consts.CAMERA_STATE_SPACE_PRIVATE.high] * self.num_cameras +
-                [consts.TARGET_STATE_SPACE_PRIVATE.high] * self.num_targets +
-                [consts.OBSTACLE_STATE_SPACE.high] * self.num_obstacles +
-                [[+np.inf] * (2 * self.num_targets + self.num_warehouses * self.num_warehouses)]
+                [consts.PRESERVED_SPACE.high]
+                + [consts.CAMERA_STATE_SPACE_PRIVATE.high] * self.num_cameras
+                + [consts.TARGET_STATE_SPACE_PRIVATE.high] * self.num_targets
+                + [consts.OBSTACLE_STATE_SPACE.high] * self.num_obstacles
+                + [[+np.inf] * (2 * self.num_targets + self.num_warehouses * self.num_warehouses)]
             ).astype(np.float64),
-            dtype=np.float64
+            dtype=np.float64,
         )
 
-        self.obstacle_states = np.zeros((self.num_obstacles, consts.OBSTACLE_STATE_DIM), dtype=np.float64)
-        self.obstacle_states_flagged = np.zeros((self.num_obstacles, consts.OBSTACLE_STATE_DIM + 1),
-                                                dtype=np.float64)
+        self.obstacle_states = np.zeros(
+            (self.num_obstacles, consts.OBSTACLE_STATE_DIM), dtype=np.float64
+        )
+        self.obstacle_states_flagged = np.zeros(
+            (self.num_obstacles, consts.OBSTACLE_STATE_DIM + 1), dtype=np.float64
+        )
 
-        self.camera_target_view_mask = np.zeros((self.num_cameras, self.num_targets), dtype=np.bool8)
+        self.camera_target_view_mask = np.zeros(
+            (self.num_cameras, self.num_targets), dtype=np.bool8
+        )
         self.tracked_bits = np.zeros(self.num_targets, dtype=np.bool8)
-        self.target_camera_view_mask = np.zeros((self.num_targets, self.num_cameras), dtype=np.bool8)
+        self.target_camera_view_mask = np.zeros(
+            (self.num_targets, self.num_cameras), dtype=np.bool8
+        )
 
-        self.camera_obstacle_view_mask = np.zeros((self.num_cameras, self.num_obstacles), dtype=np.bool8)
-        self.camera_camera_view_mask = np.zeros((self.num_cameras, self.num_cameras), dtype=np.bool8)
-        self.target_obstacle_view_mask = np.zeros((self.num_targets, self.num_obstacles), dtype=np.bool8)
-        self.target_target_view_mask = np.zeros((self.num_targets, self.num_targets), dtype=np.bool8)
-        self.camera_obstacle_observations = np.zeros((self.num_cameras, self.obstacle_states_flagged.size),
-                                                     dtype=np.float64)
+        self.camera_obstacle_view_mask = np.zeros(
+            (self.num_cameras, self.num_obstacles), dtype=np.bool8
+        )
+        self.camera_camera_view_mask = np.zeros(
+            (self.num_cameras, self.num_cameras), dtype=np.bool8
+        )
+        self.target_obstacle_view_mask = np.zeros(
+            (self.num_targets, self.num_obstacles), dtype=np.bool8
+        )
+        self.target_target_view_mask = np.zeros(
+            (self.num_targets, self.num_targets), dtype=np.bool8
+        )
+        self.camera_obstacle_observations = np.zeros(
+            (self.num_cameras, self.obstacle_states_flagged.size), dtype=np.float64
+        )
 
-        self.preserved_data = np.concatenate([numbers, [0],
-                                              consts.WAREHOUSES.ravel(),
-                                              [consts.WAREHOUSE_RADIUS]]).astype(np.float64)
+        self.preserved_data = np.concatenate(
+            [numbers, [0], consts.WAREHOUSES.ravel(), [consts.WAREHOUSE_RADIUS]]
+        ).astype(np.float64)
 
         self.target_capacities = np.ones(self.num_targets, dtype=np.int64)
-        self.remaining_cargoes = np.zeros((self.num_warehouses, self.num_warehouses), dtype=np.int64)
+        self.remaining_cargoes = np.zeros(
+            (self.num_warehouses, self.num_warehouses), dtype=np.int64
+        )
         self.awaiting_cargo_counts = np.zeros(self.num_warehouses, dtype=np.int64)
         self.num_delivered_cargoes = 0
         self.target_team_episode_reward = 0.0
         self.delayed_target_team_episode_reward = 0.0
-        self.target_warehouse_distances = np.zeros((self.num_targets, self.num_warehouses), dtype=np.float64)
+        self.target_warehouse_distances = np.zeros(
+            (self.num_targets, self.num_warehouses), dtype=np.float64
+        )
         self.target_goal_bits = np.zeros((self.num_targets, self.num_warehouses), dtype=np.int64)
         self.target_goals = np.zeros(self.num_targets, dtype=np.int64)
         self.target_goals.fill(-1)
@@ -435,8 +511,10 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         self.reward_scale = self.freight_scale + self.bounty_scale
         self.freights = np.zeros(self.num_targets, dtype=np.int64)
         self.bounties = np.zeros(self.num_targets, dtype=np.int64)
-        self._sparse_reward = (self.config['reward_type'] == 'sparse')
-        self.max_target_team_episode_reward = self.reward_scale * self.num_cargoes_per_target * self.num_targets
+        self._sparse_reward = self.config['reward_type'] == 'sparse'
+        self.max_target_team_episode_reward = (
+            self.reward_scale * self.num_cargoes_per_target * self.num_targets
+        )
 
         self.coverage_rate = 0.0
         self.real_coverage_rate = 0.0
@@ -455,11 +533,18 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         self.target_message_queue = defaultdict(deque)
         self.message_queues = (self.camera_message_queue, self.target_message_queue)
 
-        self.camera_communication_edges = np.zeros((self.num_cameras, self.num_cameras), dtype=np.int64)
-        self.target_communication_edges = np.zeros((self.num_targets, self.num_targets), dtype=np.int64)
+        self.camera_communication_edges = np.zeros(
+            (self.num_cameras, self.num_cameras), dtype=np.int64
+        )
+        self.target_communication_edges = np.zeros(
+            (self.num_targets, self.num_targets), dtype=np.int64
+        )
         self.camera_total_communication_edges = self.camera_communication_edges.copy()
         self.target_total_communication_edges = self.target_communication_edges.copy()
-        self.communication_edges = (self.camera_communication_edges, self.target_communication_edges)
+        self.communication_edges = (
+            self.camera_communication_edges,
+            self.target_communication_edges,
+        )
 
         self._np_random = None
         self.reset(seed=0)
@@ -490,10 +575,11 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
 
         self.seed(seed)
 
-    def step(self, action: Tuple[np.ndarray, np.ndarray]) -> Tuple[Tuple[np.ndarray, np.ndarray],
-                                                                   Tuple[float, float],
-                                                                   bool,
-                                                                   Tuple[List[dict], List[dict]]]:
+    def step(
+        self, action: Tuple[np.ndarray, np.ndarray]
+    ) -> Tuple[
+        Tuple[np.ndarray, np.ndarray], Tuple[float, float], bool, Tuple[List[dict], List[dict]]
+    ]:
         """Run one timestep of the environment's dynamics. When end of episode
         is reached, you are responsible for calling `reset()` to reset this
         environment's state.
@@ -529,28 +615,38 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         self.tracked_steps += self.tracked_bits
 
         self.episode_step += 1
-        done = not (self.episode_step <= self.max_episode_steps and self.awaiting_cargo_counts.any())
+        done = not (
+            self.episode_step <= self.max_episode_steps and self.awaiting_cargo_counts.any()
+        )
 
         common_info = dict(
             coverage_rate=self.coverage_rate,
             real_coverage_rate=self.real_coverage_rate,
             mean_transport_rate=self.mean_transport_rate,
-            num_delivered_cargoes=self.num_delivered_cargoes
+            num_delivered_cargoes=self.num_delivered_cargoes,
         )
-        camera_infos = [dict(raw_reward=camera_team_reward,
-                             normalized_raw_reward=normalized_camera_team_reward,
-                             messages=self.camera_message_buffer[c],
-                             out_communication_edges=self.camera_communication_edges[c, :].sum(),
-                             in_communication_edges=self.camera_communication_edges[:, c].sum(),
-                             **common_info)
-                        for c in range(self.num_cameras)]
-        target_infos = [dict(raw_reward=target_team_reward,
-                             normalized_raw_reward=normalized_target_team_reward,
-                             messages=self.target_message_buffer[t],
-                             out_communication_edges=self.target_communication_edges[t, :].sum(),
-                             in_communication_edges=self.target_communication_edges[:, t].sum(),
-                             **common_info)
-                        for t in range(self.num_targets)]
+        camera_infos = [
+            dict(
+                raw_reward=camera_team_reward,
+                normalized_raw_reward=normalized_camera_team_reward,
+                messages=self.camera_message_buffer[c],
+                out_communication_edges=self.camera_communication_edges[c, :].sum(),
+                in_communication_edges=self.camera_communication_edges[:, c].sum(),
+                **common_info,
+            )
+            for c in range(self.num_cameras)
+        ]
+        target_infos = [
+            dict(
+                raw_reward=target_team_reward,
+                normalized_raw_reward=normalized_target_team_reward,
+                messages=self.target_message_buffer[t],
+                out_communication_edges=self.target_communication_edges[t, :].sum(),
+                in_communication_edges=self.target_communication_edges[:, t].sum(),
+                **common_info,
+            )
+            for t in range(self.num_targets)
+        ]
         self.camera_total_communication_edges += self.camera_communication_edges
         self.target_total_communication_edges += self.target_communication_edges
         self.camera_communication_edges.fill(0)
@@ -564,10 +660,11 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             (camera_joint_observation, target_joint_observation),
             (camera_team_reward, target_team_reward),
             done,
-            (camera_infos, target_infos)
+            (camera_infos, target_infos),
         )
 
-    def reset(self, *, seed: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray]:  # pylint: disable=arguments-differ,too-many-locals,too-many-branches,too-many-statements
+    # pylint: disable-next=arguments-differ,too-many-locals,too-many-branches,too-many-statements
+    def reset(self, *, seed: Optional[int] = None) -> Tuple[np.ndarray, np.ndarray]:
         """Resets the environment to an initial state and returns an initial
         observation. The entities (cameras, targets and obstacles) may be
         shuffled if not explicitly disabled in configuration.
@@ -603,17 +700,21 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         self.target_capacities.fill(1)
         if self.num_high_capacity_targets > 0:
             if self.shuffle_entities:
-                slices = self.np_random.choice(self.num_targets, size=self.num_high_capacity_targets, replace=False)
+                slices = self.np_random.choice(
+                    self.num_targets, size=self.num_high_capacity_targets, replace=False
+                )
             else:
                 slices = slice(0, self.num_high_capacity_targets)
             self.target_capacities[slices] = 2
             for capacity, target in zip(self.target_capacities, self.targets):
                 target.capacity = capacity
 
-        reset = [Obstacle(location=warehouse, radius=0.75 * consts.WAREHOUSE_RADIUS)
-                 for warehouse in consts.WAREHOUSES]
+        reset = [
+            Obstacle(location=warehouse, radius=0.75 * consts.WAREHOUSE_RADIUS)
+            for warehouse in consts.WAREHOUSES
+        ]
         for entity in itertools.chain(self.cameras, self.obstacles, self.targets):
-            min_distance = (0.0 if isinstance(entity, Target) else self.target_step_size)
+            min_distance = 0.0 if isinstance(entity, Target) else self.target_step_size
             for _ in range(NUM_RESET_RETRIES):
                 entity.reset()
                 if all(not entity.overlap(r, min_distance) for r in reset):
@@ -631,7 +732,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
 
         if self.num_obstacles > 0:
             self.obstacle_states = np.vstack(list(map(Obstacle.state, self.obstacles)))
-            self.obstacle_states_flagged = np.hstack([self.obstacle_states, np.ones((self.num_obstacles, 1))])
+            self.obstacle_states_flagged = np.hstack(
+                [self.obstacle_states, np.ones((self.num_obstacles, 1))]
+            )
             self.camera_obstacle_view_mask.fill(False)
             self.target_obstacle_view_mask.fill(False)
             for c, camera in enumerate(self.cameras):
@@ -643,9 +746,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
                 camera_obstacle_observations = []
                 for c in range(self.num_cameras):
                     obstacle_mask = self.camera_obstacle_view_mask[c, :, np.newaxis]
-                    camera_obstacle_observations.append(np.where(obstacle_mask,
-                                                                 self.obstacle_states_flagged,
-                                                                 0.0).ravel())
+                    camera_obstacle_observations.append(
+                        np.where(obstacle_mask, self.obstacle_states_flagged, 0.0).ravel()
+                    )
                 self.camera_obstacle_observations = np.vstack(camera_obstacle_observations)
 
         self._update_view()
@@ -653,7 +756,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         self.remaining_cargoes.fill(0)
         while not self.remaining_cargoes.any(axis=-1).all():
             for _ in range(self.num_cargoes_per_target * self.num_targets):
-                sender, recipient = self.np_random.choice(self.num_warehouses, size=2, replace=False)
+                sender, recipient = self.np_random.choice(
+                    self.num_warehouses, size=2, replace=False
+                )
                 self.remaining_cargoes[sender, recipient] += 1
             self.awaiting_cargo_counts = self.remaining_cargoes.sum(axis=0)
 
@@ -675,7 +780,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
                 capacity = self.target_capacities[t]
                 for warehouse in self.np_random.permutation(self.num_warehouses):
                     if self.remaining_cargoes[warehouse].any():
-                        goal = self.np_random.choice(np.flatnonzero(self.remaining_cargoes[warehouse] > 0))
+                        goal = self.np_random.choice(
+                            np.flatnonzero(self.remaining_cargoes[warehouse] > 0)
+                        )
                         remaining = self.remaining_cargoes[warehouse, goal]
                         cargo_weight = min(capacity, remaining)
                         self.remaining_cargoes[warehouse, goal] -= cargo_weight
@@ -695,7 +802,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         self.target_orientations.fill(0.0)
         for t, (goal, target) in enumerate(zip(self.target_goals, self.targets)):
             if goal >= 0:
-                self.target_orientations[t] = arctan2_deg(*reversed(consts.WAREHOUSES[goal] - target.location))
+                self.target_orientations[t] = arctan2_deg(
+                    *reversed(consts.WAREHOUSES[goal] - target.location)
+                )
             else:
                 self.target_orientations[t] = normalize_angle(360.0 * self.np_random.random())
 
@@ -723,21 +832,18 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             messages = (messages,)
 
         messages = list(messages)
-        assert len(set(m.team for m in messages)) <= 1, (
-            f'All messages must be from the same team. '
-            f'Got messages = {messages}.'
-        )
+        assert (
+            len(set(m.team for m in messages)) <= 1
+        ), f'All messages must be from the same team. Got messages = {messages}.'
 
         for message in self.route_messages(messages):
             self.message_queues[message.team.value][message.recipient].append(message)
             self.message_buffers[message.team.value][message.recipient].append(message)
             self.communication_edges[message.team.value][message.sender, message.recipient] += 1
 
-    def receive_messages(self,
-                         agent_id: Optional[Tuple[Team, int]] = None,
-                         agent: Optional['AgentType'] = None) -> Union[Tuple[List[List[Message]],
-                                                                             List[List[Message]]],
-                                                                       List[Message]]:
+    def receive_messages(
+        self, agent_id: Optional[Tuple[Team, int]] = None, agent: Optional['AgentType'] = None
+    ) -> Union[Tuple[List[List[Message]], List[List[Message]]], List[Message]]:
         """Retrieve the messages to recipients. If no agent is specified, this
         method will return all the messages to all agents in the environment.
 
@@ -778,11 +884,11 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
 
         if self._state is None:
             self._state = np.concatenate(
-                [self.preserved_data] +
-                [camera.state(private=True) for camera in self.cameras] +
-                [target.state(private=True) for target in self.targets] +
-                [obstacle.state() for obstacle in self.obstacles] +
-                [self.freights, self.bounties, self.remaining_cargoes.ravel()]
+                [self.preserved_data]
+                + [camera.state(private=True) for camera in self.cameras]
+                + [target.state(private=True) for target in self.targets]
+                + [obstacle.state() for obstacle in self.obstacles]
+                + [self.freights, self.bounties, self.remaining_cargoes.ravel()]
             ).astype(np.float64)
 
         return self._state.copy()
@@ -793,45 +899,59 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         if self.num_cameras > 0:
             camera_states_public = np.vstack(list(map(Camera.state, self.cameras)))
         else:
-            camera_states_public = np.zeros((self.num_cameras, consts.CAMERA_STATE_DIM_PUBLIC),
-                                            dtype=np.float64)
-        camera_states_public_flagged = np.hstack([camera_states_public,
-                                                  np.ones((self.num_cameras, 1), dtype=np.float64)])
+            camera_states_public = np.zeros(
+                (self.num_cameras, consts.CAMERA_STATE_DIM_PUBLIC), dtype=np.float64
+            )
+        camera_states_public_flagged = np.hstack(
+            [camera_states_public, np.ones((self.num_cameras, 1), dtype=np.float64)]
+        )
 
         target_states_public = np.vstack(list(map(Target.state, self.targets)))
-        target_states_public_flagged = np.hstack([target_states_public,
-                                                  np.ones((self.num_targets, 1), dtype=np.float64)])
+        target_states_public_flagged = np.hstack(
+            [target_states_public, np.ones((self.num_targets, 1), dtype=np.float64)]
+        )
 
         if self.num_cameras > 0:
             camera_joint_observation = []
             for c, camera in enumerate(self.cameras):
                 camera_observation = [self.preserved_data, camera.state(private=True)]
                 target_mask = self.camera_target_view_mask[c, :, np.newaxis]
-                camera_observation.append(np.where(target_mask, target_states_public_flagged, 0.0).ravel())
+                camera_observation.append(
+                    np.where(target_mask, target_states_public_flagged, 0.0).ravel()
+                )
                 camera_observation.append(self.camera_obstacle_observations[c])
                 camera_mask = self.camera_camera_view_mask[c, :, np.newaxis]
-                camera_observation.append(np.where(camera_mask, camera_states_public_flagged, 0.0).ravel())
+                camera_observation.append(
+                    np.where(camera_mask, camera_states_public_flagged, 0.0).ravel()
+                )
                 camera_joint_observation.append(np.concatenate(camera_observation))
             camera_joint_observation = np.vstack(camera_joint_observation)
             camera_joint_observation[:, 3] = np.arange(self.num_cameras, dtype=np.float64)
         else:
-            camera_joint_observation = np.zeros((self.num_cameras, self.camera_observation_dim),
-                                                dtype=np.float64)
+            camera_joint_observation = np.zeros(
+                (self.num_cameras, self.camera_observation_dim), dtype=np.float64
+            )
 
         target_joint_observation = []
         for t, target in enumerate(self.targets):
             target_observation = [self.preserved_data, target.state(private=True)]
             camera_mask = self.target_camera_view_mask[t, :, np.newaxis]
-            target_observation.append(np.where(camera_mask, camera_states_public_flagged, 0.0).ravel())
+            target_observation.append(
+                np.where(camera_mask, camera_states_public_flagged, 0.0).ravel()
+            )
             obstacle_mask = self.target_obstacle_view_mask[t, :, np.newaxis]
-            target_observation.append(np.where(obstacle_mask, self.obstacle_states_flagged, 0.0).ravel())
+            target_observation.append(
+                np.where(obstacle_mask, self.obstacle_states_flagged, 0.0).ravel()
+            )
             target_mask = self.target_target_view_mask[t, :, np.newaxis]
-            target_observation.append(np.where(target_mask, target_states_public_flagged, 0.0).ravel())
+            target_observation.append(
+                np.where(target_mask, target_states_public_flagged, 0.0).ravel()
+            )
             target_joint_observation.append(np.concatenate(target_observation))
         target_joint_observation = np.vstack(target_joint_observation)
         target_joint_observation[:, 3] = np.arange(self.num_targets, dtype=np.float64)
 
-        with_bounty_bits = (self.bounties > 0)
+        with_bounty_bits = self.bounties > 0
         num_with_bounty = with_bounty_bits.sum()
         self.coverage_rate = self.tracked_bits.sum() / self.num_targets
         if num_with_bounty > 0:
@@ -840,17 +960,22 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             self.real_coverage_rate = 0.0
 
         if self.num_delivered_cargoes > 0:
-            self.mean_transport_rate = self.delayed_target_team_episode_reward / \
-                (self.reward_scale * self.num_delivered_cargoes)
+            self.mean_transport_rate = self.delayed_target_team_episode_reward / (
+                self.reward_scale * self.num_delivered_cargoes
+            )
         else:
             self.mean_transport_rate = 0.0
 
-        return camera_joint_observation.astype(np.float64), target_joint_observation.astype(np.float64)
+        return camera_joint_observation.astype(np.float64), target_joint_observation.astype(
+            np.float64
+        )
 
-    def render(  # pylint: disable=arguments-differ,too-many-locals,too-many-branches,too-many-statements
-        self, mode: str = 'human',
+    # pylint: disable-next=arguments-differ,too-many-locals,too-many-branches,too-many-statements
+    def render(
+        self,
+        mode: str = 'human',
         window_size: int = DEFAULT_WINDOW_SIZE,
-        onetime_callbacks: Iterable[Callable[['MultiAgentTracking', str], None]] = ()
+        onetime_callbacks: Iterable[Callable[['MultiAgentTracking', str], None]] = (),
     ) -> Union[bool, np.ndarray]:
         """Render the environment.
 
@@ -882,26 +1007,34 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
 
             self.viewer.warehouse_images = {}
             for key in ((True, True), (True, False), (False, True), (False, False)):
-                base = rendering.make_polygon(consts.WAREHOUSE_RADIUS * np.array([(1.0, 1.0),
-                                                                                  (-1.0, 1.0),
-                                                                                  (-1.0, -1.0),
-                                                                                  (1.0, -1.0)]))
-                image = rendering.Image(ASSETS_DIR / 'images' / 'warehouse-{:d}{:d}.png'.format(*key),  # pylint: disable=consider-using-f-string
-                                        1.8 * consts.WAREHOUSE_RADIUS, 1.8 * consts.WAREHOUSE_RADIUS)
+                base = rendering.make_polygon(
+                    consts.WAREHOUSE_RADIUS
+                    * np.array([(1.0, 1.0), (-1.0, 1.0), (-1.0, -1.0), (1.0, -1.0)])
+                )
+                image = rendering.Image(
+                    ASSETS_DIR
+                    / 'images'
+                    / 'warehouse-{:d}{:d}.png'.format(
+                        *key
+                    ),  # pylint: disable=consider-using-f-string
+                    1.8 * consts.WAREHOUSE_RADIUS,
+                    1.8 * consts.WAREHOUSE_RADIUS,
+                )
                 self.viewer.warehouse_images[key] = image
 
         if len(self.viewer.geoms) == 0:
-            margin = rendering.make_polygon(consts.TERRAIN_SIZE * np.array([[1, 1], [-1, 1], [-1, -1], [1, -1]]),
-                                            filled=False)
+            margin = rendering.make_polygon(
+                consts.TERRAIN_SIZE * np.array([[1, 1], [-1, 1], [-1, -1], [1, -1]]), filled=False
+            )
             margin.set_linewidth(3)
             self.viewer.add_geom(margin)
 
             self.viewer.warehouse = []
             for color, warehouse in zip(WAREHOUSE_COLORS, consts.WAREHOUSES):
-                base = rendering.make_polygon(consts.WAREHOUSE_RADIUS * np.array([(1.0, 1.0),
-                                                                                  (-1.0, 1.0),
-                                                                                  (-1.0, -1.0),
-                                                                                  (1.0, -1.0)]))
+                base = rendering.make_polygon(
+                    consts.WAREHOUSE_RADIUS
+                    * np.array([(1.0, 1.0), (-1.0, 1.0), (-1.0, -1.0), (1.0, -1.0)])
+                )
                 image = rendering.Compound([base, self.viewer.warehouse_images[(True, True)]])
                 base.attrs[:] = [base.color]
                 base.set_color(*color)
@@ -922,14 +1055,12 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             self.viewer.cameras = []
             for c, camera in enumerate(self.cameras):
                 base = rendering.make_circle(radius=camera.radius, res=72, filled=True)
-                body = rendering.make_polygon(camera.radius * np.array([(0.8, 0.6),
-                                                                        (-0.8, 0.6),
-                                                                        (-0.8, -0.6),
-                                                                        (0.8, -0.6)]))
-                lens = rendering.make_polygon(camera.radius * np.array([(0.7, 0.3),
-                                                                        (1.2, 0.3),
-                                                                        (1.2, -0.3),
-                                                                        (0.7, -0.3)]))
+                body = rendering.make_polygon(
+                    camera.radius * np.array([(0.8, 0.6), (-0.8, 0.6), (-0.8, -0.6), (0.8, -0.6)])
+                )
+                lens = rendering.make_polygon(
+                    camera.radius * np.array([(0.7, 0.3), (1.2, 0.3), (1.2, -0.3), (0.7, -0.3)])
+                )
                 image = rendering.Compound([base, body, lens])
                 for geom in image.gs:
                     geom.attrs[:] = [geom.color]
@@ -944,23 +1075,31 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             self.viewer.markers = []
             for capacity, target in zip(self.target_capacities, self.targets):
                 if capacity == 1:
-                    image = rendering.make_polygon(TARGET_RENDER_RADIUS * np.array([(1.0, 0.0),
-                                                                                    (-0.2, 0.6),
-                                                                                    (-0.8, 0.6),
-                                                                                    (-0.4, 0.0),
-                                                                                    (-0.8, -0.6),
-                                                                                    (-0.2, -0.6)]))
+                    image = rendering.make_polygon(
+                        TARGET_RENDER_RADIUS
+                        * np.array(
+                            [
+                                (1.0, 0.0),
+                                (-0.2, 0.6),
+                                (-0.8, 0.6),
+                                (-0.4, 0.0),
+                                (-0.8, -0.6),
+                                (-0.2, -0.6),
+                            ]
+                        )
+                    )
                 else:
-                    image = rendering.make_polygon(TARGET_RENDER_RADIUS * np.array([(1.0, 0.0),
-                                                                                    (0.3, 0.6),
-                                                                                    (-0.8, 0.6),
-                                                                                    (-0.8, -0.6),
-                                                                                    (0.3, -0.6)]))
+                    image = rendering.make_polygon(
+                        TARGET_RENDER_RADIUS
+                        * np.array([(1.0, 0.0), (0.3, 0.6), (-0.8, 0.6), (-0.8, -0.6), (0.3, -0.6)])
+                    )
 
                 image.transform = rendering.Transform(translation=target.location)
                 image.add_attr(image.transform)
 
-                marker = rendering.make_circle(radius=1.2 * TARGET_RENDER_RADIUS, res=15, filled=True)
+                marker = rendering.make_circle(
+                    radius=1.2 * TARGET_RENDER_RADIUS, res=15, filled=True
+                )
                 marker.transform = rendering.Transform(translation=target.location)
                 marker.add_attr(marker.transform)
                 marker.set_color(*target.COLOR_TRACKED)
@@ -974,11 +1113,15 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
 
             warehouse = self.viewer.warehouse[w]
             warehouse.gs[-1] = self.viewer.warehouse_images[(remaining, awaiting)]
-            warehouse.base.set_color(*warehouse.base.color.vec4[:3], (0.6 if remaining or awaiting else 0.3))
+            warehouse.base.set_color(
+                *warehouse.base.color.vec4[:3], (0.6 if remaining or awaiting else 0.3)
+            )
 
         for c, camera in enumerate(self.cameras):
-            phis, rhos = camera.boundary_between(camera.orientation - camera.viewing_angle / 2.0,
-                                                 camera.orientation + camera.viewing_angle / 2.0)
+            phis, rhos = camera.boundary_between(
+                camera.orientation - camera.viewing_angle / 2.0,
+                camera.orientation + camera.viewing_angle / 2.0,
+            )
             rhos = rhos.clip(min=camera.radius, max=camera.sight_range)
             vertexes = polar2cartesian(rhos, phis).transpose()
             vertexes = camera.location + np.concatenate([[[0.0, 0.0]], vertexes, [[0.0, 0.0]]])
@@ -998,7 +1141,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         for c, (camera, image) in enumerate(zip(self.cameras, self.viewer.cameras)):
             perceived_by_targets = self.target_camera_view_mask[:, c].any()
 
-            image.base.set_color(*(Camera.COLOR_PERCEIVED if perceived_by_targets else Camera.COLOR_UNPERCEIVED))
+            image.base.set_color(
+                *(Camera.COLOR_PERCEIVED if perceived_by_targets else Camera.COLOR_UNPERCEIVED)
+            )
             image.transform.set_rotation(np.deg2rad(camera.orientation))
             self.viewer.add_onetime(image)
 
@@ -1007,7 +1152,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             marker.transform.set_translation(*self.targets[t].location)
             self.viewer.add_onetime(marker)
 
-        for t, (goal, target, image) in enumerate(zip(self.target_goals, self.targets, self.viewer.targets)):
+        for t, (goal, target, image) in enumerate(
+            zip(self.target_goals, self.targets, self.viewer.targets)
+        ):
             image.set_color(*(WAREHOUSE_COLORS[goal] if goal >= 0 else target.COLOR_NO_LOAD))
             image.transform.set_translation(*target.location)
             image.transform.set_rotation(np.deg2rad(self.target_orientations[t]))
@@ -1023,7 +1170,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
 
         return self.viewer.render(return_rgb_array=(mode == 'rgb_array'))
 
-    def add_render_callback(self, name: str, callback: Callable[['MultiAgentTracking', str], None]) -> None:
+    def add_render_callback(
+        self, name: str, callback: Callable[['MultiAgentTracking', str], None]
+    ) -> None:
         """Add a callback function to the render function.
 
         This is useful to add additional elements to the rendering results.
@@ -1061,7 +1210,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         self._np_random, seed = seeding.np_random(seed)
 
         seeds, int_max = [seed], np.iinfo(int).max
-        for entity in itertools.chain(self.cameras_ordered, self.targets_ordered, self.obstacles_ordered):
+        for entity in itertools.chain(
+            self.cameras_ordered, self.targets_ordered, self.obstacles_ordered
+        ):
             seeds.append(entity.seed(self.np_random.randint(int_max))[0])
 
         return seeds
@@ -1075,14 +1226,15 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         return self._np_random
 
     def __str__(self) -> str:
-        return '{}({} camera{}, {} target{}, {} obstacle{})'.format(  # pylint: disable=consider-using-f-string
+        # pylint: disable-next=consider-using-f-string
+        return '{}({} camera{}, {} target{}, {} obstacle{})'.format(
             super().__str__(),
             self.num_cameras,
             's' if self.num_cameras > 1 else '',
             self.num_targets,
             's' if self.num_targets > 1 else '',
             self.num_obstacles,
-            's' if self.num_obstacles > 1 else ''
+            's' if self.num_obstacles > 1 else '',
         )
 
     def route_messages(self, messages: List[Message]) -> List[Message]:
@@ -1093,9 +1245,15 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             if message.recipient is None:  # broadcasting
                 num_teammates = [self.num_cameras, self.num_targets][message.team.value]
                 for recipient in range(num_teammates):
-                    processed_messages.append(Message(sender=message.sender, recipient=recipient,
-                                                      content=copy.deepcopy(message.content),
-                                                      team=message.team, broadcasting=True))
+                    processed_messages.append(
+                        Message(
+                            sender=message.sender,
+                            recipient=recipient,
+                            content=copy.deepcopy(message.content),
+                            team=message.team,
+                            broadcasting=True,
+                        )
+                    )
             else:
                 processed_messages.append(message)
 
@@ -1105,10 +1263,12 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         old_target_goals = self.target_goals.copy()
 
         delayed_target_team_reward = 0.0
-        target_team_reward = - float(np.logical_and(self.tracked_bits, self.bounties > 0).sum())
+        target_team_reward = -float(np.logical_and(self.tracked_bits, self.bounties > 0).sum())
         self.bounties = np.maximum(self.bounties - self.tracked_bits, 0).astype(np.int64)
 
-        for t, (goal, capacity, target) in enumerate(zip(self.target_goals, self.target_capacities, self.targets)):
+        for t, (goal, capacity, target) in enumerate(
+            zip(self.target_goals, self.target_capacities, self.targets)
+        ):
             directions = target.location - consts.WAREHOUSES
             self.target_warehouse_distances[t] = np.linalg.norm(directions, axis=-1)
             supremum = np.linalg.norm(directions, ord=np.inf, axis=-1)
@@ -1131,7 +1291,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
                 self.target_goals[t] = -1
 
                 if self.remaining_cargoes[warehouse].any():
-                    new_goal = self.np_random.choice(np.flatnonzero(self.remaining_cargoes[warehouse] > 0))
+                    new_goal = self.np_random.choice(
+                        np.flatnonzero(self.remaining_cargoes[warehouse] > 0)
+                    )
                     remaining = self.remaining_cargoes[warehouse, new_goal]
                     cargo_weight = min(capacity, remaining)
                     self.remaining_cargoes[warehouse, new_goal] -= cargo_weight
@@ -1144,9 +1306,11 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
                     break
 
             for warehouse in np.flatnonzero(supremum <= consts.WAREHOUSE_RADIUS):
-                target.empty_bits[warehouse] = (not self.remaining_cargoes[warehouse].any())
+                target.empty_bits[warehouse] = not self.remaining_cargoes[warehouse].any()
 
-        self.target_dones = np.logical_and(self.target_goals != old_target_goals, old_target_goals >= 0)
+        self.target_dones = np.logical_and(
+            self.target_goals != old_target_goals, old_target_goals >= 0
+        )
 
         return target_team_reward, delayed_target_team_reward
 
@@ -1155,14 +1319,18 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
 
         camera_joint_action = np.asarray(camera_joint_action, dtype=np.float64)
         target_joint_action = np.asarray(target_joint_action, dtype=np.float64)
-        camera_joint_action = camera_joint_action.reshape(self.num_cameras, consts.CAMERA_ACTION_DIM)
-        target_joint_action = target_joint_action.reshape(self.num_targets, consts.TARGET_ACTION_DIM)
-        assert np.isfinite(camera_joint_action).all(), (
-            f'Got unexpected joint action {camera_joint_action}.'
+        camera_joint_action = camera_joint_action.reshape(
+            self.num_cameras, consts.CAMERA_ACTION_DIM
         )
-        assert np.isfinite(target_joint_action).all(), (
-            f'Got unexpected joint action {target_joint_action}.'
+        target_joint_action = target_joint_action.reshape(
+            self.num_targets, consts.TARGET_ACTION_DIM
         )
+        assert np.isfinite(
+            camera_joint_action
+        ).all(), f'Got unexpected joint action {camera_joint_action}.'
+        assert np.isfinite(
+            target_joint_action
+        ).all(), f'Got unexpected joint action {target_joint_action}.'
 
         for camera, camera_action in zip(self.cameras, camera_joint_action):
             camera.simulate(camera_action)
@@ -1170,7 +1338,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
             previous_location = target.location.copy()
             target.simulate(target_action)
             if np.any(previous_location != target.location):
-                self.target_orientations[t] = arctan2_deg(*reversed(target.location - previous_location))
+                self.target_orientations[t] = arctan2_deg(
+                    *reversed(target.location - previous_location)
+                )
 
         self._update_view()
 
@@ -1350,7 +1520,9 @@ class MultiAgentTracking(gym.Env, EzPickle,  # pylint: disable=too-many-instance
         """Number of high-capacity target(s) in the target team."""
 
         if self._num_high_capacity_targets is None:
-            self._num_high_capacity_targets = int(self.num_targets * self.high_capacity_target_split)
+            self._num_high_capacity_targets = int(
+                self.num_targets * self.high_capacity_target_split
+            )
 
         return self._num_high_capacity_targets
 

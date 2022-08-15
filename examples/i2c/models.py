@@ -1,4 +1,4 @@
-from collections import deque, OrderedDict
+from collections import OrderedDict, deque
 
 import numpy as np
 import torch
@@ -11,7 +11,7 @@ from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.framework import try_import_torch
 from ray.rllib.utils.torch_utils import one_hot, sequence_mask
 
-from examples.utils import get_preprocessor, get_space_flat_size, SimpleMLP, SimpleRNN
+from examples.utils import SimpleMLP, SimpleRNN, get_preprocessor, get_space_flat_size
 
 
 torch, nn = try_import_torch()
@@ -27,18 +27,19 @@ class MessageAggregator(nn.Module):
 
         self.output_dim = output_dim
 
-        self.attn = nn.MultiheadAttention(embed_dim=self.query_dim,
-                                          kdim=self.key_dim,
-                                          vdim=self.value_dim,
-                                          num_heads=1,
-                                          bias=True,
-                                          add_zero_attn=True,
-                                          batch_first=True)
-        self.linear = nn.Linear(in_features=self.embed_dim,
-                                out_features=self.output_dim,
-                                bias=True)
+        self.attn = nn.MultiheadAttention(
+            embed_dim=self.query_dim,
+            kdim=self.key_dim,
+            vdim=self.value_dim,
+            num_heads=1,
+            bias=True,
+            add_zero_attn=True,
+            batch_first=True,
+        )
+        self.linear = nn.Linear(in_features=self.embed_dim, out_features=self.output_dim, bias=True)
 
     def forward(self, queries, keys, values, attn_mask=None):
+        # fmt: off
         assert queries.ndim == 4 and keys.ndim == 4 and values.ndim == 4
         B, T, Nam1 = keys.shape[:3]
         queries = queries.view(B * T, 1, -1)      # (B * T, 1, Dq)
@@ -50,6 +51,7 @@ class MessageAggregator(nn.Module):
         attn_output = attn_output.view(B, T, -1)  # (B, T, De)
 
         output = self.linear(attn_output)  # (B, T, Do)
+        # fmt: on
         return output
 
 
@@ -73,7 +75,7 @@ class I2CModel(TorchRNN, nn.Module):
         temperature=0.1,
         prior_buffer_size=100000,
         prior_percentile=50,
-        **kwargs
+        **kwargs,
     ):
         if actor_hiddens is None:
             actor_hiddens = [256, 256]
@@ -84,7 +86,9 @@ class I2CModel(TorchRNN, nn.Module):
         nn.Module.__init__(self)
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
 
-        assert hasattr(obs_space, 'original_space') and isinstance(obs_space.original_space, spaces.Dict)
+        assert hasattr(obs_space, 'original_space') and isinstance(
+            obs_space.original_space, spaces.Dict
+        )
         assert isinstance(self.action_space, spaces.Discrete)
 
         original_space = obs_space.original_space
@@ -98,15 +102,16 @@ class I2CModel(TorchRNN, nn.Module):
             self.has_action_mask = False
 
         self.flat_obs_dim = get_space_flat_size(self.obs_space)
-        self.space_dims = OrderedDict([
-            (key, get_space_flat_size(subspace))
-            for key, subspace in original_space.items()
-        ])
+        self.space_dims = OrderedDict(
+            [(key, get_space_flat_size(subspace)) for key, subspace in original_space.items()]
+        )
         indices = np.cumsum([0, *self.space_dims.values()])
-        self.flat_obs_slices = OrderedDict([
-            (key, slice(indices[i], indices[i + 1]))
-            for i, key in enumerate(self.space_dims.keys())
-        ])
+        self.flat_obs_slices = OrderedDict(
+            [
+                (key, slice(indices[i], indices[i + 1]))
+                for i, key in enumerate(self.space_dims.keys())
+            ]
+        )
 
         self.local_obs_dim = self.space_dims['obs']
         self.local_obs_slice = self.flat_obs_slices['obs']
@@ -123,8 +128,9 @@ class I2CModel(TorchRNN, nn.Module):
         self.others_joint_action_dim = self.space_dims['prev_others_joint_action']
         self.others_joint_action_slice = self.flat_obs_slices['prev_others_joint_action']
 
-        all_possible_actions = np.asarray(list(map(self.action_preprocessor.transform,
-                                                   range(self.action_space.n))))
+        all_possible_actions = np.asarray(
+            list(map(self.action_preprocessor.transform, range(self.action_space.n)))
+        )
         self.num_all_possible_actions = len(all_possible_actions)
         all_possible_actions = torch.from_numpy(all_possible_actions)
         self.register_buffer('all_possible_actions', all_possible_actions)
@@ -190,7 +196,9 @@ class I2CModel(TorchRNN, nn.Module):
             output_activation=None,
         )
         self.prior_percentile = prior_percentile
-        self.register_buffer('agent_ids', torch.from_numpy(np.eye(self.num_agents - 1, dtype=np.float32)))
+        self.register_buffer(
+            'agent_ids', torch.from_numpy(np.eye(self.num_agents - 1, dtype=np.float32))
+        )
         self.prior_buffer = deque(maxlen=prior_buffer_size)
         self.register_buffer('prior_threshold', torch.tensor(0.0, dtype=torch.float32))
 
@@ -199,15 +207,18 @@ class I2CModel(TorchRNN, nn.Module):
 
     @torch.no_grad()
     def get_communication_mask(self, observation):
+        # fmt: off
         observation = torch.from_numpy(observation).float().to(self.prior_threshold.device)  # (Do,)
         repeated_observation = observation.expand(self.num_agents - 1, -1)                   # (Na - 1, Do)
         prior_input = torch.cat((repeated_observation, self.agent_ids), dim=-1)              # (Na - 1, Do + Na - 1)
         comm_mask_logits = self.prior_network(prior_input)                                   # (Na - 1, Do + Na - 1)
         comm_mask = (comm_mask_logits >= 0.0).squeeze(dim=-1).bool()                         # (Na - 1,)
         comm_mask = comm_mask.cpu().numpy()                                                  # (Na - 1,)
+        # fmt: on
         return comm_mask
 
     def forward_rnn(self, inputs, state, seq_lens):
+        # fmt: off
         assert inputs.ndim == 3  # (B, T, *)
         B, T, flat_obs_dim = inputs.shape
         assert flat_obs_dim == self.flat_obs_dim
@@ -241,7 +252,7 @@ class I2CModel(TorchRNN, nn.Module):
         global_state = inputs[..., self.global_state_slice]
         critic_state_in = state[2:]
         _, critic_state_out = self.critic(global_state, critic_state_in, features_only=True)
-
+        # fmt: on
         return action_out, [*actor_state_out, *critic_state_out]
 
     def value_function(self):
@@ -250,14 +261,15 @@ class I2CModel(TorchRNN, nn.Module):
         return self.critic.output(self.critic.last_features).reshape(-1)
 
     def custom_loss(self, policy_loss, loss_inputs):
+        # fmt: off
         B, T = self.actor.last_features.shape[:2]
         Na = self.num_agents
         Nac = self.num_all_possible_actions
         Da = self.action_dim
 
-        mask = sequence_mask(loss_inputs[SampleBatch.SEQ_LENS],
-                             maxlen=T,
-                             time_major=self.is_time_major())
+        mask = sequence_mask(
+            loss_inputs[SampleBatch.SEQ_LENS], maxlen=T, time_major=self.is_time_major()
+        )
         num_valid = torch.sum(mask)
 
         def reduce_mean_valid(t, additional_mask=None):
@@ -366,7 +378,7 @@ class I2CModel(TorchRNN, nn.Module):
         self.policy_corr_reg_loss_metric = policy_corr_reg_loss.item()
         self.additional_loss_metric = additional_loss.item()
         self.policy_loss_metric = np.mean([loss.item() for loss in policy_loss])
-
+        # fmt: on
         return [loss + additional_loss for loss in policy_loss]
 
     def metrics(self):
@@ -376,7 +388,6 @@ class I2CModel(TorchRNN, nn.Module):
             'KL_values_mean': self.KL_values_mean_metric,
             'KL_values_max': self.KL_values_max_metric,
             'prior_threshold': self.prior_threshold_metric,
-
             'q_loss': self.q_loss_metric,
             'prior_loss': self.prior_loss_metric,
             'policy_corr_reg_loss': self.policy_corr_reg_loss_metric,

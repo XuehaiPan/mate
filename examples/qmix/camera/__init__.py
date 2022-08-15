@@ -3,4 +3,5 @@
 from examples.qmix.camera.agent import QMIXCameraAgent
 from examples.qmix.camera.config import config
 
+
 CameraAgent = QMIXCameraAgent

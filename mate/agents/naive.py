@@ -3,7 +3,7 @@
 import numpy as np
 
 from mate.agents.base import CameraAgentBase, TargetAgentBase
-from mate.constants import NUM_WAREHOUSES, WAREHOUSES, WAREHOUSE_RADIUS
+from mate.constants import NUM_WAREHOUSES, WAREHOUSE_RADIUS, WAREHOUSES
 
 
 __all__ = ['NaiveCameraAgent', 'NaiveTargetAgent']
@@ -92,14 +92,13 @@ class NaiveTargetAgent(TargetAgentBase):
         if step_size > self.state.step_size:
             action *= self.state.step_size / step_size
 
-        prob = (0.05 if np.linalg.norm(prev_actual_action) > 0.2 * self.state.step_size else 0.75)
+        prob = 0.05 if np.linalg.norm(prev_actual_action) > 0.2 * self.state.step_size else 0.75
         if self.np_random.binomial(1, prob) != 0:
             noise = 0.5 * self.action_space.sample()
         else:
             noise = self.prev_noise
 
-        action = (action + noise).clip(min=self.action_space.low,
-                                       max=self.action_space.high)
+        action = (action + noise).clip(min=self.action_space.low, max=self.action_space.high)
 
         self.prev_state = self.state
         self.prev_noise = noise

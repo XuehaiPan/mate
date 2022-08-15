@@ -3,4 +3,5 @@
 from examples.hrl.tarmac import camera
 from examples.hrl.tarmac.camera import HRLTarMACCameraAgent
 
+
 CameraAgent = HRLTarMACCameraAgent

@@ -6,6 +6,7 @@ from contextlib import contextmanager
 import nashpy as nash
 import numpy as np
 
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 def timeout_context(duration):
     def timeout_handler(signum, frame):
         raise TimeoutError(f'block timedout after {duration} seconds')
+
     signal.signal(signal.SIGALRM, timeout_handler)
     signal.alarm(duration)
     yield
@@ -46,30 +48,34 @@ class NashEquilibrium(Solver):
     def solve(self):
         logger.info(str(self.game))
 
-        for name, method in (('support enumeration', self.game.support_enumeration),
-                             ('vertex enumeration', self.game.vertex_enumeration),
-                             ('Lemke Howson algorithm', self.game.lemke_howson_enumeration)):
+        for name, method in (
+            ('support enumeration', self.game.support_enumeration),
+            ('vertex enumeration', self.game.vertex_enumeration),
+            ('Lemke Howson algorithm', self.game.lemke_howson_enumeration),
+        ):
             try:
-                logger.info(f'Trying to solve the game with {name}.')
+                logger.info('Trying to solve the game with with %s.', name)
                 with timeout_context(self.TIMEOUT):
                     sigma_row, sigma_col = next(method())
             except (StopIteration, RuntimeError):
-                logger.info(f'Failed to solve the game with {name}.')
+                logger.info('Failed to solve the game with with %s.', name)
             except TimeoutError:
-                logger.info(f'Maximum execution time exceeded with {name}.')
+                logger.info('Maximum execution time exceeded with %s.', name)
             else:
-                logger.info(f'Got Nash equilibria:\n'
-                            f'row player: {sigma_row}\n'
-                            f'column player: {sigma_col}')
+                logger.info(
+                    'Got Nash equilibria:\nrow player: %s\ncolumn player: %s', sigma_row, sigma_col
+                )
                 return sigma_row, sigma_col
 
         *_, (sigma_row, sigma_col) = iter(self.game.fictitious_play(iterations=self.ITERATIONS))
         sigma_row = np.asarray(sigma_row) / np.sum(sigma_row)
         sigma_col = np.asarray(sigma_col) / np.sum(sigma_col)
 
-        logger.info(f'Got approximate Nash equilibria using fictitious play:\n'
-                    f'row player: {sigma_row}\n'
-                    f'column player: {sigma_col}')
+        logger.info(
+            'Got approximate Nash equilibria using fictitious play:\nrow player: %s\ncolumn player: %s',
+            sigma_row,
+            sigma_col,
+        )
         return sigma_row, sigma_col
 
 

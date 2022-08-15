@@ -5,9 +5,10 @@ import numpy as np
 from gym import spaces
 
 import mate
-
-from examples.utils.wrappers import (RLlibHomogeneousMultiAgentEnv,
-                                     RLlibMultiAgentCentralizedTraining)
+from examples.utils.wrappers import (
+    RLlibHomogeneousMultiAgentEnv,
+    RLlibMultiAgentCentralizedTraining,
+)
 
 
 class ActionWithMessage(gym.Wrapper, RLlibHomogeneousMultiAgentEnv, metaclass=mate.WrapperMeta):
@@ -26,10 +27,14 @@ class ActionWithMessage(gym.Wrapper, RLlibHomogeneousMultiAgentEnv, metaclass=ma
         self.message_dim = message_dim
         self.message_space = spaces.Box(-1.0, +1.0, shape=(self.message_dim,), dtype=np.float64)
 
-        self.action_space = spaces.Dict(spaces=OrderedDict([
-            ('action', env.action_space),
-            ('message', self.message_space),
-        ]))
+        self.action_space = spaces.Dict(
+            spaces=OrderedDict(
+                [
+                    ('action', env.action_space),
+                    ('message', self.message_space),
+                ]
+            )
+        )
 
         subspaces = env.observation_space.spaces.copy()
         subspaces['messages'] = spaces.Tuple((self.message_space,) * self.num_teammates)
@@ -54,10 +59,9 @@ class ActionWithMessage(gym.Wrapper, RLlibHomogeneousMultiAgentEnv, metaclass=ma
     def step(self, action):
         messages = tuple(action[agent_id]['message'] for agent_id in self.agent_ids)
 
-        observations, rewards, dones, infos = self.env.step({
-            agent_id: action[agent_id]['action']
-            for agent_id in self.agent_ids
-        })
+        observations, rewards, dones, infos = self.env.step(
+            {agent_id: action[agent_id]['action'] for agent_id in self.agent_ids}
+        )
 
         for observation in observations.values():
             observation['messages'] = messages  # broadcasting

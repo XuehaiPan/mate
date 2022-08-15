@@ -4,8 +4,8 @@ import numpy as np
 from ray.rllib.agents.ppo import PPOTorchPolicy
 
 import mate
-
-from examples.hrl.mappo.camera.config import config as _config, make_env as _make_env
+from examples.hrl.mappo.camera.config import config as _config
+from examples.hrl.mappo.camera.config import make_env as _make_env
 from examples.hrl.wrappers import HierarchicalCamera
 from examples.utils import RLlibPolicyMixIn
 
@@ -25,8 +25,9 @@ class HRLMAPPOCameraAgent(RLlibPolicyMixIn, mate.CameraAgentBase):
 
     def __init__(self, config=None, checkpoint_path=None, make_env=_make_env, seed=None):
 
-        super().__init__(config=config, checkpoint_path=checkpoint_path,
-                         make_env=make_env, seed=seed)
+        super().__init__(
+            config=config, checkpoint_path=checkpoint_path, make_env=make_env, seed=seed
+        )
 
         self.frame_skip = self.config.get('env_config', {}).get('frame_skip', 1)
 
@@ -50,8 +51,9 @@ class HRLMAPPOCameraAgent(RLlibPolicyMixIn, mate.CameraAgentBase):
         self.last_mask = observation[self.observation_slices['opponent_mask']].astype(np.bool8)
 
         if self.episode_step % self.frame_skip == 0:
-            self.last_selection, self.hidden_state = self.compute_single_action(observation, state=self.hidden_state,
-                                                                                info=info, deterministic=deterministic)
+            self.last_selection, self.hidden_state = self.compute_single_action(
+                observation, state=self.hidden_state, info=info, deterministic=deterministic
+            )
 
             if not self.multi_selection:
                 self.last_selection = self.index2onehot[self.last_selection]
@@ -60,8 +62,11 @@ class HRLMAPPOCameraAgent(RLlibPolicyMixIn, mate.CameraAgentBase):
 
         # Convert target selection to primitive continuous action
         target_states, tracked_bits = self.get_all_opponent_states(observation)
-        self.last_action = HierarchicalCamera.executor(self.state, target_states,
-                                                       target_selection_bits=self.last_selection,
-                                                       target_view_mask=tracked_bits)
+        self.last_action = HierarchicalCamera.executor(
+            self.state,
+            target_states,
+            target_selection_bits=self.last_selection,
+            target_view_mask=tracked_bits,
+        )
 
         return self.last_action

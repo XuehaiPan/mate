@@ -6,7 +6,7 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.recurrent_net import RecurrentNetwork as TorchRNN
 from ray.rllib.utils.framework import try_import_torch
 
-from examples.utils import get_space_flat_size, SimpleRNN
+from examples.utils import SimpleRNN, get_space_flat_size
 
 
 torch, nn = try_import_torch()
@@ -22,12 +22,13 @@ class MessageAggregator(nn.Module):
 
         self.hidden_dim = hidden_dim
 
-        self.query_predictor = nn.Linear(in_features=self.hidden_dim,
-                                         out_features=self.query_dim,
-                                         bias=False)
+        self.query_predictor = nn.Linear(
+            in_features=self.hidden_dim, out_features=self.query_dim, bias=False
+        )
         self.scale = 1.0 / np.sqrt(self.query_dim)
 
     def forward(self, messages, hidden_states):
+        # fmt: off
         assert messages.ndim == 3       # (B, T, Na * Dm)
         assert hidden_states.ndim == 3  # (B, T, Dh)
         B, T, joint_message_dim = messages.shape
@@ -42,6 +43,7 @@ class MessageAggregator(nn.Module):
         attns = attns.softmax(dim=-1)                                       # (B, T, 1, Na)
         outputs = torch.matmul(attns, values)                               # (B, T, 1, Dv)
         outputs = outputs.squeeze(dim=-2)                                   # (B, T, Dv)
+        # fmt: on
 
         return outputs
 
@@ -64,7 +66,7 @@ class TarMACModel(TorchRNN, nn.Module):
         message_key_dim=32,
         message_value_dim=32,
         critic_use_global_state=True,
-        **kwargs
+        **kwargs,
     ):
         if actor_hiddens is None:
             actor_hiddens = [256, 256]
@@ -75,7 +77,9 @@ class TarMACModel(TorchRNN, nn.Module):
         nn.Module.__init__(self)
         super().__init__(obs_space, action_space, num_outputs, model_config, name)
 
-        assert hasattr(obs_space, 'original_space') and isinstance(obs_space.original_space, spaces.Dict)
+        assert hasattr(obs_space, 'original_space') and isinstance(
+            obs_space.original_space, spaces.Dict
+        )
         assert isinstance(action_space, spaces.Dict) and tuple(action_space.keys())[-1] == 'message'
         original_space = obs_space.original_space
         self.local_obs_space = original_space['obs']
@@ -88,15 +92,16 @@ class TarMACModel(TorchRNN, nn.Module):
             self.has_action_mask = False
 
         self.flat_obs_dim = get_space_flat_size(self.obs_space)
-        self.space_dims = OrderedDict([
-            (key, get_space_flat_size(subspace))
-            for key, subspace in original_space.items()
-        ])
+        self.space_dims = OrderedDict(
+            [(key, get_space_flat_size(subspace)) for key, subspace in original_space.items()]
+        )
         indices = np.cumsum([0, *self.space_dims.values()])
-        self.flat_obs_slices = OrderedDict([
-            (key, slice(indices[i], indices[i + 1]))
-            for i, key in enumerate(self.space_dims.keys())
-        ])
+        self.flat_obs_slices = OrderedDict(
+            [
+                (key, slice(indices[i], indices[i + 1]))
+                for i, key in enumerate(self.space_dims.keys())
+            ]
+        )
 
         self.local_obs_dim = self.space_dims['obs']
         self.local_obs_slice = self.flat_obs_slices['obs']
@@ -105,10 +110,9 @@ class TarMACModel(TorchRNN, nn.Module):
         self.joint_message_dim = self.space_dims['messages']
         self.joint_message_slice = self.flat_obs_slices['messages']
 
-        self.action_space_dims = OrderedDict([
-            (key, get_space_flat_size(subspace))
-            for key, subspace in self.action_space.items()
-        ])
+        self.action_space_dims = OrderedDict(
+            [(key, get_space_flat_size(subspace)) for key, subspace in self.action_space.items()]
+        )
         self.action_dim = self.action_space_dims['action']
         self.message_dim = self.action_space_dims['message']
         self.message_key_dim = self.message_query_dim = message_key_dim
@@ -129,9 +133,11 @@ class TarMACModel(TorchRNN, nn.Module):
         self.critic_hidden_activation = critic_hidden_activation
         self.lstm_cell_size = lstm_cell_size
 
-        self.message_aggregator = MessageAggregator(key_dim=self.message_key_dim,
-                                                    value_dim=self.message_value_dim,
-                                                    hidden_dim=self.lstm_cell_size * 2)
+        self.message_aggregator = MessageAggregator(
+            key_dim=self.message_key_dim,
+            value_dim=self.message_value_dim,
+            hidden_dim=self.lstm_cell_size * 2,
+        )
 
         self.actor = SimpleRNN(
             name='actor',
@@ -144,7 +150,9 @@ class TarMACModel(TorchRNN, nn.Module):
         )
 
         self.critic_use_global_state = critic_use_global_state
-        critic_obs_input_dim = (self.global_state_dim if self.critic_use_global_state else self.local_obs_dim)
+        critic_obs_input_dim = (
+            self.global_state_dim if self.critic_use_global_state else self.local_obs_dim
+        )
         self.critic = SimpleRNN(
             name='critic',
             input_dim=critic_obs_input_dim + self.joint_message_dim,
@@ -159,6 +167,7 @@ class TarMACModel(TorchRNN, nn.Module):
         return [*self.actor.get_initial_state(), *self.critic.get_initial_state()]
 
     def forward_rnn(self, inputs, state, seq_lens):
+        # fmt: off
         assert inputs.ndim == 3  # (B, T, *)
         B, T, flat_obs_dim = inputs.shape
         assert flat_obs_dim == self.flat_obs_dim
@@ -196,6 +205,7 @@ class TarMACModel(TorchRNN, nn.Module):
         _, critic_state_out = self.critic(critic_inputs, critic_state_in, features_only=True)
 
         action_out = torch.cat((action_out, message_out), dim=-1)  # (B, 1, Da + Dm)
+        # fmt: on
         return action_out, [*actor_state_out, *critic_state_out]
 
     def value_function(self):

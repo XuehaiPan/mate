@@ -58,7 +58,9 @@ class RLlibMultiAgentAPI(gym.Wrapper, RLlibHomogeneousMultiAgentEnv, metaclass=m
 
         super().__init__(env)
 
-        self.id_format = ('camera_{}'.format if isinstance(env, mate.MultiCamera) else 'target_{}'.format)
+        self.id_format = (
+            'camera_{}'.format if isinstance(env, mate.MultiCamera) else 'target_{}'.format
+        )
 
         self.observation_space = env.observation_space[0]
         self.action_space = env.action_space[0]
@@ -86,11 +88,12 @@ class RLlibMultiAgentAPI(gym.Wrapper, RLlibHomogeneousMultiAgentEnv, metaclass=m
         return OrderedDict([(self.id_format(i), item) for i, item in enumerate(seq)])
 
 
-class RLlibMultiAgentCentralizedTraining(gym.Wrapper, RLlibHomogeneousMultiAgentEnv, metaclass=mate.WrapperMeta):
-    def __init__(self, env,
-                 normalize_state=True,
-                 add_joint_observation=False,
-                 add_action_mask=False):
+class RLlibMultiAgentCentralizedTraining(
+    gym.Wrapper, RLlibHomogeneousMultiAgentEnv, metaclass=mate.WrapperMeta
+):
+    def __init__(
+        self, env, normalize_state=True, add_joint_observation=False, add_action_mask=False
+    ):
         assert isinstance(env, RLlibMultiAgentAPI), (
             f'You should use wrapper `{self.__class__}` with wrapper `RLlibMultiAgentAPI`. '
             f'Please wrap the environment with wrapper `RLlibMultiAgentAPI` first. '
@@ -112,27 +115,37 @@ class RLlibMultiAgentCentralizedTraining(gym.Wrapper, RLlibHomogeneousMultiAgent
             self.state_space = spaces.Box(
                 low=mate.normalize_observation(env.state_space.low, env.state_space),
                 high=mate.normalize_observation(env.state_space.high, env.state_space),
-                dtype=env.state_space.dtype
+                dtype=env.state_space.dtype,
             )
         else:
             self.state_space = env.state_space
 
         self.action_space = env.action_space
-        self.others_joint_observation_space = spaces.Tuple(spaces=(env.observation_space,) * (self.num_teammates - 1))
-        self.others_joint_action_space = spaces.Tuple(spaces=(self.action_space,) * (self.num_teammates - 1))
+        self.others_joint_observation_space = spaces.Tuple(
+            spaces=(env.observation_space,) * (self.num_teammates - 1)
+        )
+        self.others_joint_action_space = spaces.Tuple(
+            spaces=(self.action_space,) * (self.num_teammates - 1)
+        )
 
-        subspaces = OrderedDict([
-            # Local observation of the current agent
-            ('obs', env.observation_space),
-            # Global state of the environment
-            ('state', self.state_space),
-            # Joint action for other agents (exclude the current agent)
-            # Can be shift with callback `ShiftAgentActionTimestep`
-            ('prev_others_joint_action', self.others_joint_action_space),
-        ])
+        subspaces = OrderedDict(
+            [
+                # Local observation of the current agent
+                ('obs', env.observation_space),
+                # Global state of the environment
+                ('state', self.state_space),
+                # Joint action for other agents (exclude the current agent)
+                # Can be shift with callback `ShiftAgentActionTimestep`
+                ('prev_others_joint_action', self.others_joint_action_space),
+            ]
+        )
 
         if add_action_mask:
-            assert hasattr(env, 'action_mask_space') and hasattr(env, 'action_mask') and callable(env.action_mask)
+            assert (
+                hasattr(env, 'action_mask_space')
+                and hasattr(env, 'action_mask')
+                and callable(env.action_mask)
+            )
             self.has_action_mask = True
             subspaces['action_mask'] = env.action_mask_space
         else:
@@ -147,9 +160,12 @@ class RLlibMultiAgentCentralizedTraining(gym.Wrapper, RLlibHomogeneousMultiAgent
     def load_config(self, config=None):
         self.env.load_config(config=config)
 
-        self.__init__(self.env, normalize_state=self.normalize_state,
-                      add_joint_observation=self.add_joint_observation,
-                      add_action_mask=self.has_action_mask)
+        self.__init__(
+            self.env,
+            normalize_state=self.normalize_state,
+            add_joint_observation=self.add_joint_observation,
+            add_action_mask=self.has_action_mask,
+        )
 
     def state(self):
         state = self.env.state()
@@ -172,19 +188,23 @@ class RLlibMultiAgentCentralizedTraining(gym.Wrapper, RLlibHomogeneousMultiAgent
         state = self.state()
         for i, agent_id in enumerate(self.agent_ids):
             local_observation = observations[agent_id]
-            observation = OrderedDict([
-                ('obs', local_observation),
-                ('state', state),
-                # Can be shift with callback `ShiftAgentActionTimestep`
-                ('prev_others_joint_action', zeros_prev_others_joint_action),
-            ])
+            observation = OrderedDict(
+                [
+                    ('obs', local_observation),
+                    ('state', state),
+                    # Can be shift with callback `ShiftAgentActionTimestep`
+                    ('prev_others_joint_action', zeros_prev_others_joint_action),
+                ]
+            )
 
             if self.has_action_mask:
                 action_mask = self.action_mask(local_observation)
                 observation['action_mask'] = action_mask
 
             if self.add_joint_observation:
-                observation['others_joint_observation'] = cycled_joint_observation[i + 1: i + self.num_teammates]
+                observation['others_joint_observation'] = cycled_joint_observation[
+                    i + 1 : i + self.num_teammates
+                ]
 
             observations[agent_id] = observation
 
@@ -205,19 +225,26 @@ class RLlibMultiAgentCentralizedTraining(gym.Wrapper, RLlibHomogeneousMultiAgent
         state = self.state()
         for i, agent_id in enumerate(self.agent_ids):
             local_observation = observations[agent_id]
-            observation = OrderedDict([
-                ('obs', local_observation),
-                ('state', state),
-                # Can be shift with callback `ShiftAgentActionTimestep`
-                ('prev_others_joint_action', cycled_joint_action[i + 1: i + self.num_teammates])
-            ])
+            observation = OrderedDict(
+                [
+                    ('obs', local_observation),
+                    ('state', state),
+                    # Can be shift with callback `ShiftAgentActionTimestep`
+                    (
+                        'prev_others_joint_action',
+                        cycled_joint_action[i + 1 : i + self.num_teammates],
+                    ),
+                ]
+            )
 
             if self.has_action_mask:
                 action_mask = self.action_mask(local_observation)
                 observation['action_mask'] = action_mask
 
             if self.add_joint_observation:
-                observation['others_joint_observation'] = cycled_joint_observation[i + 1: i + self.num_teammates]
+                observation['others_joint_observation'] = cycled_joint_observation[
+                    i + 1 : i + self.num_teammates
+                ]
 
             observations[agent_id] = observation
 
@@ -273,7 +300,9 @@ class FrameSkip(gym.Wrapper, metaclass=mate.WrapperMeta):
 
     def step(self, action):
         fragment_rewards = []
-        info_collectors = [MetricCollector(self.INFO_KEYS) for _ in range(len(self.last_observations))]
+        info_collectors = [
+            MetricCollector(self.INFO_KEYS) for _ in range(len(self.last_observations))
+        ]
         for f in range(self.frame_skip):
             observations, rewards, dones, infos = self.env.step(action)
             fragment_rewards.append(rewards)

@@ -3,4 +3,5 @@
 from examples.hrl.mappo.camera.agent import HRLMAPPOCameraAgent
 from examples.hrl.mappo.camera.config import config
 
+
 CameraAgent = HRLMAPPOCameraAgent

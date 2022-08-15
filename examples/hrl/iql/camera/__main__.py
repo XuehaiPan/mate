@@ -13,12 +13,11 @@ Example of hierarchical IQL agents for the Multi-Agent Tracking Environment.
 """
 
 import argparse
-import os
 import functools
+import os
 import sys
 
 import mate
-
 from examples.hrl.iql.camera.agent import HRLIQLCameraAgent
 from examples.hrl.iql.camera.train import experiment
 from examples.hrl.wrappers import HierarchicalCamera
@@ -31,13 +30,25 @@ MAX_EPISODE_STEPS = 4000
 
 def main():
     parser = argparse.ArgumentParser(prog=f'python -m {__package__}')
-    parser.add_argument('--checkpoint-path', '--checkpoint', '--ckpt', type=str,
-                        metavar='PATH', default=CHECKPOINT_PATH,
-                        help='path to the checkpoint file')
-    parser.add_argument('--max-episode-steps', type=int, metavar='STEP', default=MAX_EPISODE_STEPS,
-                        help='maximum episode steps (default: %(default)d)')
-    parser.add_argument('--seed', type=int, metavar='SEED', default=0,
-                        help='the global seed (default: %(default)d)')
+    parser.add_argument(
+        '--checkpoint-path',
+        '--checkpoint',
+        '--ckpt',
+        type=str,
+        metavar='PATH',
+        default=CHECKPOINT_PATH,
+        help='path to the checkpoint file',
+    )
+    parser.add_argument(
+        '--max-episode-steps',
+        type=int,
+        metavar='STEP',
+        default=MAX_EPISODE_STEPS,
+        help='maximum episode steps (default: %(default)d)',
+    )
+    parser.add_argument(
+        '--seed', type=int, metavar='SEED', default=0, help='the global seed (default: %(default)d)'
+    )
     args = parser.parse_args()
 
     if not os.path.exists(args.checkpoint_path):
@@ -46,7 +57,7 @@ def main():
                 f'Model checkpoint ("{args.checkpoint_path}") does not exist. Please run the following command to train a model first:\n'
                 f'  python -m examples.hrl.iql.camera.train'
             ),
-            file=sys.stderr
+            file=sys.stderr,
         )
         sys.exit(1)
 
@@ -58,8 +69,11 @@ def main():
     env_config = camera_agent.config.get('env_config', {})
     enhanced_observation_team = str(env_config.get('enhanced_observation', None)).lower()
 
-    base_env = mate.make('MultiAgentTracking-v0', config=env_config.get('config'),
-                         **env_config.get('config_overrides', {}))
+    base_env = mate.make(
+        'MultiAgentTracking-v0',
+        config=env_config.get('config'),
+        **env_config.get('config_overrides', {}),
+    )
     base_env = mate.RenderCommunication(base_env)
     if enhanced_observation_team is not None:
         base_env = mate.EnhancedObservation(base_env, team=enhanced_observation_team)
@@ -76,21 +90,20 @@ def main():
     camera_infos = None
 
     for i in range(MAX_EPISODE_STEPS):
-        camera_joint_action = mate.group_step(env, camera_agents,
-                                              camera_joint_observation,
-                                              camera_infos)
+        camera_joint_action = mate.group_step(
+            env, camera_agents, camera_joint_observation, camera_infos
+        )
 
-        selections = [(agent.index, agent.last_selection, agent.last_mask)
-                      for agent in camera_agents]
+        selections = [
+            (agent.index, agent.last_selection, agent.last_mask) for agent in camera_agents
+        ]
 
-        (
-            camera_joint_observation,
-            camera_team_reward,
-            done,
-            camera_infos
-        ) = env.step(camera_joint_action)
+        results = env.step(camera_joint_action)
+        camera_joint_observation, camera_team_reward, done, camera_infos = results
 
-        render_callback = functools.partial(HierarchicalCamera.render_selection_callback, selections=selections)
+        render_callback = functools.partial(
+            HierarchicalCamera.render_selection_callback, selections=selections
+        )
         env.render(onetime_callbacks=[render_callback])
         if done:
             break

@@ -3,4 +3,5 @@
 from examples.mappo.target.agent import MAPPOTargetAgent
 from examples.mappo.target.config import config
 
+
 TargetAgent = MAPPOTargetAgent

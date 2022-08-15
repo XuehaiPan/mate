@@ -7,7 +7,7 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.framework import try_import_torch
 
-from examples.utils import get_space_flat_size, SimpleMLP
+from examples.utils import SimpleMLP, get_space_flat_size
 
 
 torch, nn = try_import_torch()
@@ -48,7 +48,7 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
         critic_hidden_activation='relu',
         twin_q=False,
         add_layer_norm=False,
-        **kwargs
+        **kwargs,
     ):
         if actor_hiddens is None:
             actor_hiddens = [256, 256]
@@ -59,7 +59,9 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
         nn.Module.__init__(self)
         TorchModelV2.__init__(self, obs_space, action_space, num_outputs, model_config, name)
 
-        assert hasattr(obs_space, 'original_space') and isinstance(obs_space.original_space, spaces.Dict)
+        assert hasattr(obs_space, 'original_space') and isinstance(
+            obs_space.original_space, spaces.Dict
+        )
         assert isinstance(self.action_space, spaces.Box)
 
         original_space = obs_space.original_space
@@ -67,15 +69,16 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
         self.global_state_space = original_space['state']
 
         self.flat_obs_dim = get_space_flat_size(self.obs_space)
-        self.space_dims = OrderedDict([
-            (key, get_space_flat_size(subspace))
-            for key, subspace in original_space.items()
-        ])
+        self.space_dims = OrderedDict(
+            [(key, get_space_flat_size(subspace)) for key, subspace in original_space.items()]
+        )
         indices = np.cumsum([0, *self.space_dims.values()])
-        self.flat_obs_slices = OrderedDict([
-            (key, slice(indices[i], indices[i + 1]))
-            for i, key in enumerate(self.space_dims.keys())
-        ])
+        self.flat_obs_slices = OrderedDict(
+            [
+                (key, slice(indices[i], indices[i + 1]))
+                for i, key in enumerate(self.space_dims.keys())
+            ]
+        )
 
         self.local_obs_dim = self.space_dims['obs']
         self.local_obs_slice = self.flat_obs_slices['obs']
@@ -86,7 +89,9 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
         # The action time step is shifted with callback `ShiftAgentActionTimestep`
         self.others_joint_action_dim = self.space_dims['prev_others_joint_action']
         self.others_joint_action_slice = self.flat_obs_slices['prev_others_joint_action']
-        self.global_state_action_dim = self.global_state_dim + self.others_joint_action_dim + self.action_dim
+        self.global_state_action_dim = (
+            self.global_state_dim + self.others_joint_action_dim + self.action_dim
+        )
 
         self.actor_hiddens = actor_hiddens or []
         self.critic_hiddens = critic_hiddens or list(self.actor_hiddens)
@@ -100,7 +105,7 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
             output_dim=self.action_dim,
             layer_norm=add_layer_norm,
             activation=self.actor_hidden_activation,
-            output_activation=None
+            output_activation=None,
         )
         if self.action_space.is_bounded('both'):
             self.policy_model = nn.Sequential(policy_model, SquashAction(self.action_space))
@@ -114,7 +119,7 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
             output_dim=1,
             layer_norm=add_layer_norm,
             activation=self.critic_hidden_activation,
-            output_activation=None
+            output_activation=None,
         )
         self.q_model = SimpleMLP(**q_model_kwargs)
         if twin_q:
@@ -159,17 +164,13 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
             }
         return [
             *tuple(self.q_model.parameters()),
-            *tuple(
-                self.twin_q_model.parameters()
-                if self.twin_q_model is not None
-                else []
-            ),
+            *tuple(self.twin_q_model.parameters() if self.twin_q_model is not None else []),
         ]
 
     def forward(self, input_dict, state, seq_lens):
         """Do nothing. The actual forward operations are `get_policy_output` and `get_q_values`."""
 
-        return input_dict["obs_flat"].float(), state
+        return input_dict['obs_flat'].float(), state
 
 
 ModelCatalog.register_custom_model('MADDPGModel', MADDPGModel)

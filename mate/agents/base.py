@@ -3,7 +3,7 @@
 import copy
 import functools
 from abc import ABC, abstractmethod
-from typing import List, Tuple, Iterable, Union, Optional, Any, Type
+from typing import Any, Iterable, List, Optional, Tuple, Type, Union
 
 import numpy as np
 from gym import spaces
@@ -146,10 +146,12 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
         self.index = int(np.round(observation[3]).astype(np.int64))
         self.agent_id = f'{self.TEAM.name.lower()}_{self.index}'
 
-        kwargs = dict(team=self.TEAM,
-                      num_cameras=self.num_cameras,
-                      num_targets=self.num_targets,
-                      num_obstacles=self.num_obstacles)
+        kwargs = dict(
+            team=self.TEAM,
+            num_cameras=self.num_cameras,
+            num_targets=self.num_targets,
+            num_obstacles=self.num_obstacles,
+        )
         self.observation_indices = consts.observation_indices_of(**kwargs)
         self.observation_slices = consts.observation_slices_of(**kwargs)
         self.observation_dim = self.observation_indices[-1]
@@ -167,8 +169,9 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
             f'Got observation = {observation} with shape = {observation.shape}.'
         )
 
-        self.state = self.STATE_CLASS(observation[self.observation_slices['self_state']],
-                                      index=self.index)
+        self.state = self.STATE_CLASS(
+            observation[self.observation_slices['self_state']], index=self.index
+        )
 
         self.action_space = copy.deepcopy(self.state.action_space)
         self.action_space.seed(self.np_random.randint(np.iinfo(int).max))
@@ -206,12 +209,18 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
             dimension for agent indices.
         """  # pylint: disable=line-too-long
 
-        # pylint: disable=unused-variable
-        self.state, self.last_observation, self.last_info, messages = self.check_inputs(observation, info)
+        # pylint: disable-next=unused-variable
+        self.state, self.last_observation, self.last_info, messages = self.check_inputs(
+            observation, info
+        )
 
     @abstractmethod
-    def act(self, observation: np.ndarray, info: Optional[dict] = None,
-            deterministic: Optional[bool] = None) -> Union[int, np.ndarray]:
+    def act(
+        self,
+        observation: np.ndarray,
+        info: Optional[dict] = None,
+        deterministic: Optional[bool] = None,
+    ) -> Union[int, np.ndarray]:
         r"""Get the agent action by the observation.
         This function will be called before every env.step().
 
@@ -237,7 +246,7 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
             dimension for agent indices.
         """  # pylint: disable=line-too-long
 
-        # pylint: disable=unused-variable
+        # pylint: disable-next=unused-variable
         self.state, observation, info, messages = self.check_inputs(observation, info)
 
         # Override this
@@ -245,8 +254,12 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         return self.DEFAULT_ACTION  # pylint: disable=unreachable
 
-    def predict(self, observation: np.ndarray, info: Optional[dict] = None,
-                deterministic: Optional[bool] = None) -> Union[int, np.ndarray]:
+    def predict(
+        self,
+        observation: np.ndarray,
+        info: Optional[dict] = None,
+        deterministic: Optional[bool] = None,
+    ) -> Union[int, np.ndarray]:
         """Get the agent action by the observation. Shortcut method for act().
 
         Note:
@@ -255,8 +268,12 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         return self.act(observation, info, deterministic=deterministic)
 
-    def __call__(self, observation: np.ndarray, info: Optional[dict] = None,
-                 deterministic: Optional[bool] = None) -> Union[int, np.ndarray]:
+    def __call__(
+        self,
+        observation: np.ndarray,
+        info: Optional[dict] = None,
+        deterministic: Optional[bool] = None,
+    ) -> Union[int, np.ndarray]:
         """Shortcut method for act()."""
 
         return self.act(observation, info, deterministic=deterministic)
@@ -357,10 +374,9 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         self.last_responses = tuple(messages)
 
-    def check_inputs(self, observation: np.ndarray, info: Optional[dict] = None) -> Tuple[StatePrivateType,
-                                                                                          np.ndarray,
-                                                                                          dict,
-                                                                                          List[Message]]:
+    def check_inputs(
+        self, observation: np.ndarray, info: Optional[dict] = None
+    ) -> Tuple[StatePrivateType, np.ndarray, dict, List[Message]]:
         """Preprocess the inputs for observe() and act()."""
 
         observation = np.asarray(observation, dtype=np.float64)
@@ -370,8 +386,9 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
         )
 
         info = info or {}
-        state = self.STATE_CLASS(observation[self.observation_slices['self_state']],
-                                 index=self.index)
+        state = self.STATE_CLASS(
+            observation[self.observation_slices['self_state']], index=self.index
+        )
         messages = info.get('messages', [])
 
         if self._step_counter % 2 == 0:
@@ -383,65 +400,100 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
     def pack_message(self, content: Any, recipient: Optional[int] = None) -> Message:
         """Pack the content into a Message object."""
 
-        return Message(sender=self.index, recipient=recipient, content=content,
-                       team=self.TEAM, broadcasting=(recipient is None))
+        return Message(
+            sender=self.index,
+            recipient=recipient,
+            content=content,
+            team=self.TEAM,
+            broadcasting=(recipient is None),
+        )
 
-    def get_teammate_state(self, observation: np.ndarray, index: int) -> Tuple[utils.TargetStatePublic, bool]:
+    def get_teammate_state(
+        self, observation: np.ndarray, index: int
+    ) -> Tuple[utils.TargetStatePublic, bool]:
         """Get the teammate's public state from observation by index."""
 
         if not 0 <= index < self.num_teammates:
             raise IndexError('Teammate index out of range.')
 
         offset = self.observation_indices[4] + (self.TEAMMATE_STATE_CLASS.DIM + 1) * index
-        teammate_state = self.TEAMMATE_STATE_CLASS(observation[..., offset:offset + self.TEAMMATE_STATE_CLASS.DIM],
-                                                   index=index)
+        teammate_state = self.TEAMMATE_STATE_CLASS(
+            observation[..., offset : offset + self.TEAMMATE_STATE_CLASS.DIM], index=index
+        )
         sensed = bool(observation[..., offset + self.TEAMMATE_STATE_CLASS.DIM])
         return teammate_state, sensed
 
-    def get_teammate_states(self, observation: np.ndarray) -> Tuple[Tuple[utils.TargetStatePublic, ...],
-                                                                    Tuple[bool, ...]]:
+    def get_teammate_states(
+        self, observation: np.ndarray
+    ) -> Tuple[Tuple[utils.TargetStatePublic, ...], Tuple[bool, ...]]:
         """Get all teammates' states from observation."""
 
-        return tuple(zip(*[self.get_teammate_state(observation, index)
-                           for index in range(self.num_teammates)]))
+        return tuple(
+            zip(
+                *[
+                    self.get_teammate_state(observation, index)
+                    for index in range(self.num_teammates)
+                ]
+            )
+        )
 
-    def get_opponent_state(self, observation: np.ndarray, index: int) -> Tuple[StatePublicType, bool]:
+    def get_opponent_state(
+        self, observation: np.ndarray, index: int
+    ) -> Tuple[StatePublicType, bool]:
         """Get the opponent agent state from observation by index."""
 
         if not 0 <= index < self.num_opponents:
             raise IndexError('Opponent index out of range.')
 
         offset = self.observation_indices[2] + (self.OPPONENT_STATE_CLASS.DIM + 1) * index
-        opponent_state = self.OPPONENT_STATE_CLASS(observation[..., offset:offset + self.OPPONENT_STATE_CLASS.DIM],
-                                                   index=index)
+        opponent_state = self.OPPONENT_STATE_CLASS(
+            observation[..., offset : offset + self.OPPONENT_STATE_CLASS.DIM], index=index
+        )
         sensed = bool(observation[..., offset + self.OPPONENT_STATE_CLASS.DIM])
         return opponent_state, sensed
 
-    def get_all_opponent_states(self, observation: np.ndarray) -> Tuple[Tuple[StatePublicType, ...],
-                                                                        Tuple[bool, ...]]:
+    def get_all_opponent_states(
+        self, observation: np.ndarray
+    ) -> Tuple[Tuple[StatePublicType, ...], Tuple[bool, ...]]:
         """Get all opponents' states from observation."""
 
-        return tuple(zip(*[self.get_opponent_state(observation, index)
-                           for index in range(self.num_opponents)]))
+        return tuple(
+            zip(
+                *[
+                    self.get_opponent_state(observation, index)
+                    for index in range(self.num_opponents)
+                ]
+            )
+        )
 
-    def get_obstacle_state(self, observation: np.ndarray, index: int) -> Tuple[utils.ObstacleState, bool]:
+    def get_obstacle_state(
+        self, observation: np.ndarray, index: int
+    ) -> Tuple[utils.ObstacleState, bool]:
         """Get the obstacle state from observation by index."""
 
         if not 0 <= index < self.num_obstacles:
             raise IndexError('Obstacle index out of range.')
 
         offset = self.observation_indices[3] + (consts.OBSTACLE_STATE_DIM + 1) * index
-        obstacle_state = utils.ObstacleState(observation[..., offset:offset + consts.OBSTACLE_STATE_DIM],
-                                             index=index)
+        obstacle_state = utils.ObstacleState(
+            observation[..., offset : offset + consts.OBSTACLE_STATE_DIM], index=index
+        )
         sensed = bool(observation[..., offset + consts.OBSTACLE_STATE_DIM])
         return obstacle_state, sensed
 
-    def get_all_obstacle_states(self, observation: np.ndarray) -> Tuple[Tuple[utils.ObstacleState, ...],
-                                                                        Tuple[bool, ...]]:
+    def get_all_obstacle_states(
+        self, observation: np.ndarray
+    ) -> Tuple[Tuple[utils.ObstacleState, ...], Tuple[bool, ...]]:
         """Get all obstacle states from observation."""
 
-        return tuple(zip(*[self.get_obstacle_state(observation, index)
-                           for index in range(self.num_obstacles)]))
+        return tuple(
+            zip(
+                *[
+                    self.get_obstacle_state(observation, index)
+                    for index in range(self.num_obstacles)
+                ]
+            )
+        )
 
 
 class CameraAgentBase(AgentBase):

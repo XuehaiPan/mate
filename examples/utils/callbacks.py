@@ -2,25 +2,27 @@ import logging
 import os
 import platform
 import re
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 from operator import itemgetter
 from pathlib import Path
 
 import numpy as np
 from gym import spaces
-from ray.rllib.agents.callbacks import DefaultCallbacks as RLlibCallbackBase, MultiCallbacks as RLlibMultiCallbacksBase
+from ray.rllib.agents.callbacks import DefaultCallbacks as RLlibCallbackBase
+from ray.rllib.agents.callbacks import MultiCallbacks as RLlibMultiCallbacksBase
 from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.spaces import space_utils
 from ray.tune.callback import Callback as TuneCallbackBase
 
-from .rllib_policy import load_checkpoint, get_preprocessor, get_space_flat_size
+from .rllib_policy import get_preprocessor, get_space_flat_size, load_checkpoint
+
 
 logger = logging.getLogger(__name__)
 
 try:
     import wandb
 except ImportError:
-    logger.error("Run `pip install wandb` to use WandbLoggerCallback.")
+    logger.error('Run `pip install wandb` to use WandbLoggerCallback.')
     wandb = None
     from ray.tune.logger import LoggerCallback as WandbLoggerCallbackBase
 else:
@@ -29,9 +31,13 @@ else:
 
 __all__ = [
     'ShiftAgentActionTimestep',
-    'MetricCollector', 'CustomMetricCallback', 'GroupedCustomMetricCallback',
-    'TrainFromCheckpoint', 'SymlinkCheckpointCallback', 'RLlibMultiCallbacks',
-    'WandbLoggerCallback'
+    'MetricCollector',
+    'CustomMetricCallback',
+    'GroupedCustomMetricCallback',
+    'TrainFromCheckpoint',
+    'SymlinkCheckpointCallback',
+    'RLlibMultiCallbacks',
+    'WandbLoggerCallback',
 ]
 
 
@@ -58,14 +64,17 @@ class ShiftAgentActionTimestep(RLlibCallbackBase):
             return
 
         from .wrappers import RLlibMultiAgentCentralizedTraining
+
         assert isinstance(sub_environment, RLlibMultiAgentCentralizedTraining)
 
         self.agent_ids = list(sub_environment.agent_ids)
         cycled_agent_ids = self.agent_ids + self.agent_ids
-        self.other_agent_ids = OrderedDict([
-            (agent_id, cycled_agent_ids[i + 1: i + len(self.agent_ids)])
-            for i, agent_id in enumerate(self.agent_ids)
-        ])
+        self.other_agent_ids = OrderedDict(
+            [
+                (agent_id, cycled_agent_ids[i + 1 : i + len(self.agent_ids)])
+                for i, agent_id in enumerate(self.agent_ids)
+            ]
+        )
 
         self.observation_space = sub_environment.observation_space
         self.obs_flat_dim = get_space_flat_size(self.observation_space)
@@ -79,11 +88,21 @@ class ShiftAgentActionTimestep(RLlibCallbackBase):
         self.identifier = None
         self.last_next_actions = {}
 
-    def on_postprocess_trajectory(self, *, worker, episode,
-                                  agent_id, policy_id, policies,
-                                  postprocessed_batch, original_batches,
-                                  **kwargs):
-        batch_identifier = tuple(id(agent_batch) for _, agent_batch in map(original_batches.get, self.agent_ids))
+    def on_postprocess_trajectory(
+        self,
+        *,
+        worker,
+        episode,
+        agent_id,
+        policy_id,
+        policies,
+        postprocessed_batch,
+        original_batches,
+        **kwargs,
+    ):
+        batch_identifier = tuple(
+            id(agent_batch) for _, agent_batch in map(original_batches.get, self.agent_ids)
+        )
         identifier = hash((episode, batch_identifier))
         if identifier != self.identifier:
             self.last_next_actions.clear()
@@ -107,14 +126,22 @@ class ShiftAgentActionTimestep(RLlibCallbackBase):
                 action = space_utils.clip_action(action, policy.action_space_struct)
             self.last_next_actions[aid] = action
 
-        postprocessed_batch[SampleBatch.CUR_OBS][:, self.others_joint_action_slice] \
-            = postprocessed_batch[SampleBatch.NEXT_OBS][:, self.others_joint_action_slice]
-        postprocessed_batch[SampleBatch.NEXT_OBS][:-1, self.others_joint_action_slice] \
-            = postprocessed_batch[SampleBatch.NEXT_OBS][1:, self.others_joint_action_slice]
+        postprocessed_batch[SampleBatch.CUR_OBS][
+            :, self.others_joint_action_slice
+        ] = postprocessed_batch[SampleBatch.NEXT_OBS][:, self.others_joint_action_slice]
+        postprocessed_batch[SampleBatch.NEXT_OBS][
+            :-1, self.others_joint_action_slice
+        ] = postprocessed_batch[SampleBatch.NEXT_OBS][1:, self.others_joint_action_slice]
 
-        last_others_next_actions = tuple(self.last_next_actions[aid] for aid in self.other_agent_ids[agent_id])
-        last_others_next_joint_action = self.others_joint_action_preprocessor.transform(last_others_next_actions)
-        postprocessed_batch[SampleBatch.NEXT_OBS][-1, self.others_joint_action_slice] = last_others_next_joint_action
+        last_others_next_actions = tuple(
+            self.last_next_actions[aid] for aid in self.other_agent_ids[agent_id]
+        )
+        last_others_next_joint_action = self.others_joint_action_preprocessor.transform(
+            last_others_next_actions
+        )
+        postprocessed_batch[SampleBatch.NEXT_OBS][
+            -1, self.others_joint_action_slice
+        ] = last_others_next_joint_action
 
 
 class MetricCollector:
@@ -123,7 +150,7 @@ class MetricCollector:
         'sum': np.sum,
         'std': np.std,
         'last': itemgetter(-1)
-    }
+    }  # fmt: skip
 
     def __init__(self, metrics):
         self.metrics = metrics
@@ -196,11 +223,8 @@ class CustomMetricCallback(RLlibCallbackBase):
         collector = episode.user_data['collector']
         custom_metrics = collector.collect()
         for key in tuple(custom_metrics):
-            if (
-                key.endswith('reward')
-                and not (
-                    key.startswith('episode') or key.startswith('reward_coefficient')
-                )
+            if key.endswith('reward') and not (
+                key.startswith('episode') or key.startswith('reward_coefficient')
             ):
                 custom_metrics[f'episode_{key}'] = float(np.sum(collector.data[key]))
 
@@ -208,7 +232,6 @@ class CustomMetricCallback(RLlibCallbackBase):
 
 
 class GroupedCustomMetricCallback(CustomMetricCallback):
-
     def on_episode_step(self, *, worker, base_env, episode, env_index, **kwargs):
         infos = []
         for group_info in map(episode.last_info_for, episode.get_agents()):
@@ -240,7 +263,10 @@ class TrainFromCheckpoint(RLlibCallbackBase):
 
         _, worker, _ = load_checkpoint(self.checkpoint_path)
 
-        weights = {policy_id: policy_state['weights'] for policy_id, policy_state in worker['state'].items()}
+        weights = {
+            policy_id: policy_state['weights']
+            for policy_id, policy_state in worker['state'].items()
+        }
 
         trainer.workers.local_worker().set_weights(weights)
         if trainer.workers.remote_workers():
@@ -251,7 +277,6 @@ class TrainFromCheckpoint(RLlibCallbackBase):
 
 
 class SymlinkCheckpointCallback(TuneCallbackBase):
-
     def on_checkpoint(self, iteration, trials, trial, checkpoint, **info):
         source = checkpoint.value
         for target_dir in (trial.logdir, trial.local_dir):
@@ -263,11 +288,12 @@ class SymlinkCheckpointCallback(TuneCallbackBase):
     def symlink(source, target):
         temp_target = f'{target}.temp'
 
-        os_symlink = getattr(os, "symlink", None)
+        os_symlink = getattr(os, 'symlink', None)
         if callable(os_symlink):
             os_symlink(source, temp_target)
         elif platform.system() == 'Windows':
             import ctypes
+
             csl = ctypes.windll.kernel32.CreateSymbolicLinkW
             csl.argtypes = (ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32)
             csl.restype = ctypes.c_ubyte

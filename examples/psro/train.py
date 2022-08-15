@@ -14,15 +14,15 @@ import ray
 import torch
 
 import mate
-
 from examples.hrl.mappo.camera import CameraAgent
-from examples.hrl.mappo.camera.train import train as camera_train, experiment as camera_base_experiment
+from examples.hrl.mappo.camera.train import experiment as camera_base_experiment
+from examples.hrl.mappo.camera.train import train as camera_train
 from examples.mappo.target import TargetAgent
-from examples.mappo.target.train import train as target_train, experiment as target_base_experiment
-
-from examples.psro.trainer import PlayerTrainer
-from examples.psro.evaluator import evaluate, calculate_exploitability
+from examples.mappo.target.train import experiment as target_base_experiment
+from examples.mappo.target.train import train as target_train
+from examples.psro.evaluator import calculate_exploitability, evaluate
 from examples.psro.meta_solvers import META_SOLVERS
+from examples.psro.trainer import PlayerTrainer
 
 
 camera_base_experiment = copy.deepcopy(camera_base_experiment)
@@ -32,7 +32,7 @@ camera_base_experiment.spec['config']['env_config']['config_overrides'] = {'rewa
 camera_base_experiment.spec['config']['env_config']['reward_coefficients'] = {
     'coverage_rate': 0.5,
     'real_coverage_rate': 0.5,
-    'raw_reward': 0.1
+    'raw_reward': 0.1,
 }
 camera_base_experiment.spec['config']['env_config']['reward_reduction'] = 'mean'
 camera_base_experiment.spec['config']['env_config']['enhanced_observation'] = 'target'
@@ -50,7 +50,7 @@ BOOTSTRAP_CAMERA_AGENT_CLASSES = [mate.RandomCameraAgent]
 BOOTSTRAP_TARGET_AGENT_CLASSES = [mate.RandomTargetAgent]
 
 
-DEBUG = (getattr(sys, 'gettrace', lambda: None)() is not None)
+DEBUG = getattr(sys, 'gettrace', lambda: None)() is not None
 
 HERE = Path(__file__).absolute().parent
 LOCAL_DIR = HERE / 'ray_results'
@@ -72,29 +72,38 @@ NUM_GPUS_FOR_TRAINER = min(NUM_NODE_GPUS / 2.0, 0.25)  # can be overridden by co
 
 MAX_NUM_CPUS_FOR_WORKER = max(0, (NUM_NODE_CPUS - PRESERVED_NUM_CPUS) // 2 - NUM_CPUS_FOR_TRAINER)
 MAX_NUM_WORKERS = min(32, MAX_NUM_CPUS_FOR_WORKER)  # use at most 32 workers
-NUM_WORKERS = (MAX_NUM_WORKERS if not DEBUG else 0)  # can be overridden by command line arguments
+NUM_WORKERS = MAX_NUM_WORKERS if not DEBUG else 0  # can be overridden by command line arguments
 
 
 def camera_agent_factory(agent_specs, weights, seed=0):
     assert len(agent_specs) == len(weights)
 
     candidates = [agent_spec() for agent_spec in agent_specs]
-    return mate.MixtureCameraAgent(candidates=candidates, weights=weights, mixture_seed=seed, seed=seed)
+    return mate.MixtureCameraAgent(
+        candidates=candidates, weights=weights, mixture_seed=seed, seed=seed
+    )
 
 
 def target_agent_factory(agent_specs, weights, seed=0):
     assert len(agent_specs) == len(weights)
 
     candidates = [agent_spec() for agent_spec in agent_specs]
-    return mate.MixtureTargetAgent(candidates=candidates, weights=weights, mixture_seed=seed, seed=seed)
+    return mate.MixtureTargetAgent(
+        candidates=candidates, weights=weights, mixture_seed=seed, seed=seed
+    )
 
 
 def train(
     iterations,
-    project=None, group=None, local_dir=LOCAL_DIR,
-    num_gpus=NUM_GPUS_FOR_TRAINER, num_workers=NUM_WORKERS,
-    num_envs_per_worker=8, timesteps_total=5E6,
-    meta_solver='NashEquilibrium', num_evaluation_episodes=100,
+    project=None,
+    group=None,
+    local_dir=LOCAL_DIR,
+    num_gpus=NUM_GPUS_FOR_TRAINER,
+    num_workers=NUM_WORKERS,
+    num_envs_per_worker=8,
+    timesteps_total=5e6,
+    meta_solver='NashEquilibrium',
+    num_evaluation_episodes=100,
     seed=0,
 ):
     if not ray.is_initialized():
@@ -107,12 +116,19 @@ def train(
     project = project or 'mate-psro'
     if isinstance(meta_solver, str):
         meta_solver = META_SOLVERS[meta_solver]
-    group = group or f'{meta_solver.ABBREVIATED_NAME}-{camera_base_experiment.name}-vs.-{target_base_experiment.name}'
+    group = (
+        group
+        or f'{meta_solver.ABBREVIATED_NAME}-{camera_base_experiment.name}-vs.-{target_base_experiment.name}'
+    )
 
     evaluation_env_config = target_base_experiment.spec['config']['env_config']
 
-    camera_agent_specs = [partial(agent_class, seed=seed) for agent_class in BOOTSTRAP_CAMERA_AGENT_CLASSES]
-    target_agent_specs = [partial(agent_class, seed=seed) for agent_class in BOOTSTRAP_TARGET_AGENT_CLASSES]
+    camera_agent_specs = [
+        partial(agent_class, seed=seed) for agent_class in BOOTSTRAP_CAMERA_AGENT_CLASSES
+    ]
+    target_agent_specs = [
+        partial(agent_class, seed=seed) for agent_class in BOOTSTRAP_TARGET_AGENT_CLASSES
+    ]
     camera_agent_pool = [agent_spec() for agent_spec in camera_agent_specs]
     target_agent_pool = [agent_spec() for agent_spec in target_agent_specs]
     payoff_matrices = np.full((2, 0, 0), fill_value=np.nan, dtype=np.float64)
@@ -168,8 +184,20 @@ def train(
             )
 
             player_mapping = {
-                'camera': (camera_trainer, CameraAgent, camera_agent_specs, camera_agent_pool, camera_local_dir),
-                'target': (target_trainer, TargetAgent, target_agent_specs, target_agent_pool, target_local_dir),
+                'camera': (
+                    camera_trainer,
+                    CameraAgent,
+                    camera_agent_specs,
+                    camera_agent_pool,
+                    camera_local_dir,
+                ),
+                'target': (
+                    target_trainer,
+                    TargetAgent,
+                    target_agent_specs,
+                    target_agent_pool,
+                    target_local_dir,
+                ),
             }
 
             train_kwargs = dict(
@@ -188,14 +216,22 @@ def train(
                 if len(ready) > 0:
                     for player, best_checkpoint_path in ray.get(ready):
                         print(f'Player {player}({i:05d}) ready.')
-                        trainer, agent_class, agent_specs, agent_pool, experiment_local_dir = player_mapping[player]
+                        (
+                            trainer,
+                            agent_class,
+                            agent_specs,
+                            agent_pool,
+                            experiment_local_dir,
+                        ) = player_mapping[player]
                         ray.kill(trainer)
 
                         new_agent_spec = partial(agent_class, checkpoint_path=best_checkpoint_path)
                         new_agent = new_agent_spec()
                         agent_specs.append(new_agent_spec)
                         agent_pool.append(new_agent)
-                        (experiment_local_dir / 'checkpoint_path.txt').write_text(str(best_checkpoint_path), encoding='UTF-8')
+                        (experiment_local_dir / 'checkpoint_path.txt').write_text(
+                            str(best_checkpoint_path), encoding='UTF-8'
+                        )
 
                     payoff_matrices, coverage_rate_matrix, *_ = evaluate(
                         payoff_matrices,
@@ -213,7 +249,7 @@ def train(
             exploitabilities = np.append(
                 exploitabilities,
                 [calculate_exploitability(payoff_matrices, sigma_camera, sigma_target)],
-                axis=0
+                axis=0,
             )
         else:
             payoff_matrices, coverage_rate_matrix, *_ = evaluate(
@@ -248,29 +284,70 @@ def train(
 
 def main():
     parser = argparse.ArgumentParser(prog=f'python -m {__package__}')
-    parser.add_argument('--iterations', type=int, metavar='ITER', default=40,
-                        help='total number of iterations (default: %(default)d)')
-    parser.add_argument('--project', type=str, metavar='PROJECT', default=None,
-                        help='W&B project name')
-    parser.add_argument('--group', type=str, metavar='GROUP', default=None,
-                        help='W&B group name')
-    parser.add_argument('--local-dir', type=str, metavar='DIR', default=LOCAL_DIR,
-                        help='Local directory for the experiment (default: %(default)s)')
-    parser.add_argument('--num-gpus', type=float, metavar='GPU', default=NUM_GPUS_FOR_TRAINER,
-                        help='number of GPUs for trainer for each player (default: %(default)g)')
-    parser.add_argument('--num-workers', type=int, metavar='WORKER', default=NUM_WORKERS,
-                        help='number of rollout workers for each player (default: %(default)d)')
-    parser.add_argument('--num-envs-per-worker', type=int, metavar='ENV', default=8,
-                        help='number of environments per rollout worker (default: %(default)d)')
-    parser.add_argument('--timesteps-total', type=float, metavar='STEP', default=5E6,
-                        help='number of environment steps for each iteration (default: %(default).1E)')
-    parser.add_argument('--meta-solver', type=str, metavar='SOLVER',
-                        default='NashEquilibrium', choices=list(META_SOLVERS.keys()),
-                        help='meta-strategy solver for the meta-game (default: %(default)s)')
-    parser.add_argument('--num-evaluation-episodes', type=int, metavar='EPISODE', default=100,
-                        help='number of episodes to evaluate for each payoff entry (default: %(default)d)')
-    parser.add_argument('--seed', type=int, metavar='SEED', default=0,
-                        help='the global seed (default: %(default)d)')
+    parser.add_argument(
+        '--iterations',
+        type=int,
+        metavar='ITER',
+        default=40,
+        help='total number of iterations (default: %(default)d)',
+    )
+    parser.add_argument(
+        '--project', type=str, metavar='PROJECT', default=None, help='W&B project name'
+    )
+    parser.add_argument('--group', type=str, metavar='GROUP', default=None, help='W&B group name')
+    parser.add_argument(
+        '--local-dir',
+        type=str,
+        metavar='DIR',
+        default=LOCAL_DIR,
+        help='Local directory for the experiment (default: %(default)s)',
+    )
+    parser.add_argument(
+        '--num-gpus',
+        type=float,
+        metavar='GPU',
+        default=NUM_GPUS_FOR_TRAINER,
+        help='number of GPUs for trainer for each player (default: %(default)g)',
+    )
+    parser.add_argument(
+        '--num-workers',
+        type=int,
+        metavar='WORKER',
+        default=NUM_WORKERS,
+        help='number of rollout workers for each player (default: %(default)d)',
+    )
+    parser.add_argument(
+        '--num-envs-per-worker',
+        type=int,
+        metavar='ENV',
+        default=8,
+        help='number of environments per rollout worker (default: %(default)d)',
+    )
+    parser.add_argument(
+        '--timesteps-total',
+        type=float,
+        metavar='STEP',
+        default=5e6,
+        help='number of environment steps for each iteration (default: %(default).1e)',
+    )
+    parser.add_argument(
+        '--meta-solver',
+        type=str,
+        metavar='SOLVER',
+        default='NashEquilibrium',
+        choices=list(META_SOLVERS.keys()),
+        help='meta-strategy solver for the meta-game (default: %(default)s)',
+    )
+    parser.add_argument(
+        '--num-evaluation-episodes',
+        type=int,
+        metavar='EPISODE',
+        default=100,
+        help='number of episodes to evaluate for each payoff entry (default: %(default)d)',
+    )
+    parser.add_argument(
+        '--seed', type=int, metavar='SEED', default=0, help='the global seed (default: %(default)d)'
+    )
 
     args = parser.parse_args()
 

@@ -3,11 +3,16 @@ from ray.rllib.models import MODEL_DEFAULTS
 from ray.rllib.policy.policy import PolicySpec
 
 import mate
-
 from examples.maddpg.models import MADDPGModel
-from examples.utils import (RLlibMultiAgentAPI, RLlibMultiAgentCentralizedTraining, FrameSkip,
-                            ShiftAgentActionTimestep, CustomMetricCallback, RLlibMultiCallbacks,
-                            independent_policy_mapping_fn)
+from examples.utils import (
+    CustomMetricCallback,
+    FrameSkip,
+    RLlibMultiAgentAPI,
+    RLlibMultiAgentCentralizedTraining,
+    RLlibMultiCallbacks,
+    ShiftAgentActionTimestep,
+    independent_policy_mapping_fn,
+)
 
 
 def camera_agent_factory():
@@ -17,7 +22,9 @@ def camera_agent_factory():
 def make_env(env_config):
     env_config = env_config or {}
     env_id = env_config.get('env_id', 'MultiAgentTracking-v0')
-    base_env = mate.make(env_id, config=env_config.get('config'), **env_config.get('config_overrides', {}))
+    base_env = mate.make(
+        env_id, config=env_config.get('config'), **env_config.get('config_overrides', {})
+    )
     if str(env_config.get('enhanced_observation', None)).lower() != 'none':
         base_env = mate.EnhancedObservation(base_env, team=env_config['enhanced_observation'])
 
@@ -32,8 +39,11 @@ def make_env(env_config):
     env = mate.RepeatedRewardIndividualDone(env)
 
     if 'reward_coefficients' in env_config:
-        env = mate.AuxiliaryTargetRewards(env, coefficients=env_config['reward_coefficients'],
-                                          reduction=env_config.get('reward_reduction', 'none'))
+        env = mate.AuxiliaryTargetRewards(
+            env,
+            coefficients=env_config['reward_coefficients'],
+            reduction=env_config.get('reward_reduction', 'none'),
+        )
 
     frame_skip = env_config.get('frame_skip', 1)
     if frame_skip > 1:
@@ -49,8 +59,7 @@ tune.register_env('mate-maddpg.target', make_env)
 config = {
     'framework': 'torch',
     'seed': 0,
-
-    # === Environment ===
+    # === Environment ==============================================================================
     'env': 'mate-maddpg.target',
     'env_config': {
         'env_id': 'MultiAgentTracking-v0',
@@ -62,8 +71,7 @@ config = {
     },
     'horizon': 500,
     'callbacks': RLlibMultiCallbacks([CustomMetricCallback, ShiftAgentActionTimestep]),
-
-    # === Model ===
+    # === Model ====================================================================================
     'normalize_actions': False,  # required by the model and exploration
     'model': {
         'max_seq_len': 25,
@@ -76,10 +84,9 @@ config = {
             'critic_hidden_activation': 'relu',
             'max_seq_len': 25,
             'vf_share_layers': False,
-        }
+        },
     },
-
-    # === Policy ===
+    # === Policy ===================================================================================
     'gamma': 0.99,
     'twin_q': True,
     'policy_delay': 2,
@@ -88,8 +95,7 @@ config = {
     'target_noise_clip': 0.5,
     'n_step': 1,
     'multiagent': {},  # independent policies defined in below
-
-    # === Exploration ===
+    # === Exploration ==============================================================================
     'explore': True,
     'exploration_config': {
         'type': 'GaussianNoise',
@@ -99,8 +105,7 @@ config = {
         'final_scale': 1.0,
         'scale_timesteps': 1,  # do not anneal over time (fixed 1.0)
     },
-
-    # === Replay Buffer & Optimization ===
+    # === Replay Buffer & Optimization =============================================================
     'batch_mode': 'truncate_episodes',
     'prioritized_replay': True,
     'replay_buffer_config': {
@@ -112,8 +117,8 @@ config = {
     'rollout_fragment_length': 25,
     'train_batch_size': 1024,
     'metrics_num_episodes_for_smoothing': 25,
-    'actor_lr': 1E-4,
-    'critic_lr': 1E-4,
+    'actor_lr': 1e-4,
+    'critic_lr': 1e-4,
     'tau': 0.01,
     'target_network_update_freq': 0,
     'use_huber': True,
@@ -125,11 +130,9 @@ config = {
 _dummy_env = make_env(config['env_config'])
 config['multiagent'].update(
     policies={
-        agent_id: PolicySpec(observation_space=None,
-                             action_space=None,
-                             config=None)
+        agent_id: PolicySpec(observation_space=None, action_space=None, config=None)
         for agent_id in _dummy_env.agent_ids
     },
-    policy_mapping_fn=independent_policy_mapping_fn
+    policy_mapping_fn=independent_policy_mapping_fn,
 )
 del _dummy_env

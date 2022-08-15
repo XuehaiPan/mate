@@ -2,12 +2,16 @@ import copy
 
 from gym import spaces
 from ray import tune
-from ray.rllib.models import MODEL_DEFAULTS
 from ray.rllib.agents.qmix import qmix
+from ray.rllib.models import MODEL_DEFAULTS
 
 import mate
-
-from examples.utils import RLlibMultiAgentAPI, RLlibMultiAgentCentralizedTraining, FrameSkip, GroupedCustomMetricCallback
+from examples.utils import (
+    FrameSkip,
+    GroupedCustomMetricCallback,
+    RLlibMultiAgentAPI,
+    RLlibMultiAgentCentralizedTraining,
+)
 
 
 def camera_agent_factory():
@@ -17,7 +21,9 @@ def camera_agent_factory():
 def make_env(env_config):
     env_config = env_config or {}
     env_id = env_config.get('env_id', 'MultiAgentTracking-v0')
-    base_env = mate.make(env_id, config=env_config.get('config'), **env_config.get('config_overrides', {}))
+    base_env = mate.make(
+        env_id, config=env_config.get('config'), **env_config.get('config_overrides', {})
+    )
     if str(env_config.get('enhanced_observation', None)).lower() != 'none':
         base_env = mate.EnhancedObservation(base_env, team=env_config['enhanced_observation'])
 
@@ -33,8 +39,11 @@ def make_env(env_config):
     env = mate.RepeatedRewardIndividualDone(env)
 
     if 'reward_coefficients' in env_config:
-        env = mate.AuxiliaryTargetRewards(env, coefficients=env_config['reward_coefficients'],
-                                          reduction=env_config.get('reward_reduction', 'none'))
+        env = mate.AuxiliaryTargetRewards(
+            env,
+            coefficients=env_config['reward_coefficients'],
+            reduction=env_config.get('reward_reduction', 'none'),
+        )
 
     frame_skip = env_config.get('frame_skip', 1)
     if frame_skip > 1:
@@ -46,9 +55,9 @@ def make_env(env_config):
     observation_space = spaces.Tuple((env.observation_space,) * len(env.agent_ids))
     setattr(observation_space, 'original_space', copy.deepcopy(observation_space))
 
-    env = env.with_agent_groups(groups={'camera': env.agent_ids},
-                                obs_space=observation_space,
-                                act_space=action_space)
+    env = env.with_agent_groups(
+        groups={'camera': env.agent_ids}, obs_space=observation_space, act_space=action_space
+    )
     return env
 
 
@@ -58,8 +67,7 @@ config = {
     **qmix.DEFAULT_CONFIG,
     'framework': 'torch',
     'seed': 0,
-
-    # === Environment ===
+    # === Environment ==============================================================================
     'env': 'mate-qmix.target',
     'env_config': {
         'env_id': 'MultiAgentTracking-v0',
@@ -73,8 +81,7 @@ config = {
     'disable_env_checking': True,
     'horizon': 500,
     'callbacks': GroupedCustomMetricCallback,
-
-    # === Model ===
+    # === Model ====================================================================================
     'normalize_actions': True,
     'model': {
         **MODEL_DEFAULTS,
@@ -85,28 +92,25 @@ config = {
     },
     'mixer': 'qmix',
     'mixing_embed_dim': 128,
-
-    # === Policy ===
+    # === Policy ===================================================================================
     'gamma': 0.99,
-
-    # === Exploration ===
+    # === Exploration ==============================================================================
     'explore': True,
     'exploration_config': {
         'type': 'EpsilonGreedy',
         'initial_epsilon': 1.0,
         'final_epsilon': 0.02,
-        'epsilon_timesteps': 50000,     # trained environment steps
+        'epsilon_timesteps': 50000,  # trained environment steps
     },
-
-    # === Replay Buffer & Optimization ===
+    # === Replay Buffer & Optimization =============================================================
     'batch_mode': 'complete_episodes',
-    'rollout_fragment_length': 0,       # send sampled episodes to the replay buffer immediately
-    'buffer_size': 2000,                # each item contains `num_workers` episodes (will be updated in train.py)
-    'timesteps_per_iteration': 5120,    # environment steps
-    'learning_starts': 5000,            # environment steps
-    'train_batch_size': 1024,           # environment steps
+    'rollout_fragment_length': 0,  # send sampled episodes to the replay buffer immediately
+    'buffer_size': 2000,  # each item contains `num_workers` episodes (will be updated in train.py)
+    'timesteps_per_iteration': 5120,  # environment steps
+    'learning_starts': 5000,  # environment steps
+    'train_batch_size': 1024,  # environment steps
     'target_network_update_freq': 500,  # environment steps
     'metrics_num_episodes_for_smoothing': 25,
     'grad_norm_clipping': 1000.0,
-    'lr': 1E-4,
+    'lr': 1e-4,
 }

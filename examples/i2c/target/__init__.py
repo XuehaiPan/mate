@@ -3,4 +3,5 @@
 from examples.i2c.target.agent import I2CTargetAgent
 from examples.i2c.target.config import config
 
+
 TargetAgent = I2CTargetAgent

@@ -1,16 +1,19 @@
 import re
-from collections import defaultdict
 
 import gym
 import numpy as np
 from gym import spaces
 
 import mate
+from examples.utils import CustomMetricCallback, MetricCollector
 
-from examples.utils import MetricCollector, CustomMetricCallback
 
-
-__all__ = ['HierarchicalCamera', 'MultiDiscrete2DiscreteActionMapper', 'FlattenMultiDiscrete', 'DiscreteMultiSelection']
+__all__ = [
+    'HierarchicalCamera',
+    'MultiDiscrete2DiscreteActionMapper',
+    'FlattenMultiDiscrete',
+    'DiscreteMultiSelection',
+]
 
 
 class HierarchicalCamera(gym.Wrapper, metaclass=mate.WrapperMeta):
@@ -36,10 +39,9 @@ class HierarchicalCamera(gym.Wrapper, metaclass=mate.WrapperMeta):
             f'Please wrap the environment with wrapper `MultiCamera` first. '
             f'Got env = {env}.'
         )
-        assert not isinstance(env, HierarchicalCamera), (
-            f'You should not use wrapper `{self.__class__}` more than once. '
-            f'Got env = {env}.'
-        )
+        assert not isinstance(
+            env, HierarchicalCamera
+        ), f'You should not use wrapper `{self.__class__}` more than once. Got env = {env}.'
 
         super().__init__(env)
 
@@ -54,7 +56,9 @@ class HierarchicalCamera(gym.Wrapper, metaclass=mate.WrapperMeta):
         self.teammate_action_space = self.camera_action_space
         self.teammate_joint_action_space = self.camera_joint_action_space = self.action_space
 
-        self.observation_slices = mate.camera_observation_slices_of(env.num_cameras, env.num_targets, env.num_obstacles)
+        self.observation_slices = mate.camera_observation_slices_of(
+            env.num_cameras, env.num_targets, env.num_obstacles
+        )
         self.target_view_mask_slice = self.observation_slices['opponent_mask']
 
         self.index2onehot = np.eye(env.num_targets + 1, env.num_targets, dtype=np.bool8)
@@ -62,19 +66,24 @@ class HierarchicalCamera(gym.Wrapper, metaclass=mate.WrapperMeta):
 
         self.frame_skip = frame_skip
         self.custom_metrics = custom_metrics or CustomMetricCallback.DEFAULT_CUSTOM_METRICS
-        self.custom_metrics.update({
-            'num_selected_targets': 'mean',
-            'num_valid_selected_targets': 'mean',
-            'num_invalid_selected_targets': 'mean',
-            'invalid_target_selection_rate': 'mean',
-        })
+        self.custom_metrics.update(
+            {
+                'num_selected_targets': 'mean',
+                'num_valid_selected_targets': 'mean',
+                'num_invalid_selected_targets': 'mean',
+                'invalid_target_selection_rate': 'mean',
+            }
+        )
 
     def load_config(self, config=None):
         self.env.load_config(config=config)
 
-        self.__init__(self.env, multi_selection=self.multi_selection,
-                      frame_skip=self.frame_skip,
-                      custom_metrics=self.custom_metrics)
+        self.__init__(
+            self.env,
+            multi_selection=self.multi_selection,
+            frame_skip=self.frame_skip,
+            custom_metrics=self.custom_metrics,
+        )
 
     def reset(self, **kwargs):
         self.last_observations = observations = self.env.reset(**kwargs)
@@ -87,9 +96,9 @@ class HierarchicalCamera(gym.Wrapper, metaclass=mate.WrapperMeta):
             action = action.reshape(self.num_cameras, self.num_targets)
         else:
             action = action.reshape(self.num_cameras)
-        assert self.camera_joint_action_space.contains(tuple(action)), (
-            f'Joint action {tuple(action)} outside given joint action space {self.camera_joint_action_space}.'
-        )
+        assert self.camera_joint_action_space.contains(
+            tuple(action)
+        ), f'Joint action {tuple(action)} outside given joint action space {self.camera_joint_action_space}.'
 
         if not self.multi_selection:
             action = self.index2onehot[action]
@@ -104,15 +113,23 @@ class HierarchicalCamera(gym.Wrapper, metaclass=mate.WrapperMeta):
 
         observations = self.last_observations
         for f in range(self.frame_skip):
-            observations, rewards, dones, infos = self.env.step(self.joint_executor(action, observations))
+            observations, rewards, dones, infos = self.env.step(
+                self.joint_executor(action, observations)
+            )
 
             for c in range(self.num_cameras):
                 target_selection = action[c].astype(np.bool8)
                 target_view_mask = observations[c, self.target_view_mask_slice].astype(np.bool8)
                 num_selected_targets = target_selection.sum()
-                num_valid_selected_targets = np.logical_and(target_selection, target_view_mask).sum()
-                num_invalid_selected_targets = np.logical_and(target_selection, np.logical_not(target_view_mask)).sum()
-                invalid_target_selection_rate = num_invalid_selected_targets / max(1, num_selected_targets)
+                num_valid_selected_targets = np.logical_and(
+                    target_selection, target_view_mask
+                ).sum()
+                num_invalid_selected_targets = np.logical_and(
+                    target_selection, np.logical_not(target_view_mask)
+                ).sum()
+                invalid_target_selection_rate = num_invalid_selected_targets / max(
+                    1, num_selected_targets
+                )
                 infos[c]['num_selected_targets'] = num_selected_targets
                 infos[c]['num_valid_selected_targets'] = num_valid_selected_targets
                 infos[c]['num_invalid_selected_targets'] = num_invalid_selected_targets
@@ -136,11 +153,13 @@ class HierarchicalCamera(gym.Wrapper, metaclass=mate.WrapperMeta):
 
     def joint_executor(self, joint_action, joint_observation):
         actions = []
-        for camera, target_selection_bits, observation in zip(self.cameras,
-                                                              joint_action,
-                                                              joint_observation):
+        for camera, target_selection_bits, observation in zip(
+            self.cameras, joint_action, joint_observation
+        ):
             target_view_mask = observation[self.target_view_mask_slice].astype(np.bool8)
-            actions.append(self.executor(camera, self.targets, target_selection_bits, target_view_mask))
+            actions.append(
+                self.executor(camera, self.targets, target_selection_bits, target_view_mask)
+            )
 
         return np.asarray(actions, dtype=np.float64)
 
@@ -175,7 +194,10 @@ class HierarchicalCamera(gym.Wrapper, metaclass=mate.WrapperMeta):
         def best_viewing_angle():
             distance = np.linalg.norm(center - camera.location)
 
-            if distance * (1.0 + mate.sin_deg(camera.min_viewing_angle / 2.0)) >= camera.max_sight_range:
+            if (
+                distance * (1.0 + mate.sin_deg(camera.min_viewing_angle / 2.0))
+                >= camera.max_sight_range
+            ):
                 return camera.min_viewing_angle
 
             area_product = camera.viewing_angle * np.square(camera.sight_range)
@@ -185,14 +207,17 @@ class HierarchicalCamera(gym.Wrapper, metaclass=mate.WrapperMeta):
             best = min(180.0, mate.MAX_CAMERA_VIEWING_ANGLE)
             for _ in range(20):
                 sight_range = distance * (1.0 + mate.sin_deg(min(best / 2.0, 90.0)))
-                best = (area_product / np.square(sight_range))
-            return np.clip(best, a_min=camera.min_viewing_angle, a_max=mate.MAX_CAMERA_VIEWING_ANGLE)
+                best = area_product / np.square(sight_range)
+            return np.clip(
+                best, a_min=camera.min_viewing_angle, a_max=mate.MAX_CAMERA_VIEWING_ANGLE
+            )
 
-        return np.asarray([
-            mate.normalize_angle(best_orientation() - camera.orientation),
-            best_viewing_angle() - camera.viewing_angle
-        ]).clip(min=camera.action_space.low,
-                max=camera.action_space.high)
+        return np.asarray(
+            [
+                mate.normalize_angle(best_orientation() - camera.orientation),
+                best_viewing_angle() - camera.viewing_angle,
+            ]
+        ).clip(min=camera.action_space.low, max=camera.action_space.high)
 
     @staticmethod
     def render_selection_callback(unwrapped, mode, selections):
@@ -241,8 +266,10 @@ class MultiDiscrete2DiscreteActionMapper:
         self.space = spaces.Discrete(self.n)
         self.mask_space = spaces.MultiBinary(self.n)
 
-        self.strides = np.asarray(list(reversed(np.cumprod(list(reversed(self.nvec.ravel())))))[1:] + [1],
-                                  dtype=self.space.dtype)
+        self.strides = np.asarray(
+            list(reversed(np.cumprod(list(reversed(self.nvec.ravel())))))[1:] + [1],
+            dtype=self.space.dtype,
+        )
 
         self._mask_mapping = None
 
@@ -250,7 +277,9 @@ class MultiDiscrete2DiscreteActionMapper:
     def mask_table(self):
         if self._mask_mapping is None:
             self._mask_mapping = np.zeros((self.n, np.sum(self.nvec)), dtype=np.bool8)
-            all_multi_discrete_actions = self.multi_discrete_action_batched(list(range(self.n)), strict=False)
+            all_multi_discrete_actions = self.multi_discrete_action_batched(
+                list(range(self.n)), strict=False
+            )
             offsets = np.cumsum([0, *self.nvec.ravel()[:-1]], dtype=np.int64)
             indices = all_multi_discrete_actions.reshape(self.n, -1) + offsets[np.newaxis, :]
             for n, index in enumerate(indices):
@@ -275,13 +304,17 @@ class MultiDiscrete2DiscreteActionMapper:
             discrete_action_batch = discrete_action_batch % s
 
         multi_discrete_action_batch = np.stack(multi_discrete_action_batch, axis=-1)
-        return multi_discrete_action_batch.reshape(-1, *self.original_space.shape).astype(self.original_space.dtype)
+        return multi_discrete_action_batch.reshape(-1, *self.original_space.shape).astype(
+            self.original_space.dtype
+        )
 
     def multi_discrete_action(self, discrete_action):
         return self.multi_discrete_action_batched([discrete_action])[0]
 
     def discrete_action_batched(self, multi_discrete_action_batch, strict=True):
-        multi_discrete_action_batch = np.asarray(multi_discrete_action_batch, dtype=self.original_space.dtype)
+        multi_discrete_action_batch = np.asarray(
+            multi_discrete_action_batch, dtype=self.original_space.dtype
+        )
 
         assert multi_discrete_action_batch.shape[1:] == self.nvec.shape
         if strict:
@@ -294,7 +327,9 @@ class MultiDiscrete2DiscreteActionMapper:
         batch_size = multi_discrete_action_batch.shape[0]
         multi_discrete_action_batch = multi_discrete_action_batch.reshape(batch_size, -1)
 
-        discrete_action_batch = (self.strides[np.newaxis, :] * multi_discrete_action_batch).sum(axis=-1)
+        discrete_action_batch = (self.strides[np.newaxis, :] * multi_discrete_action_batch).sum(
+            axis=-1
+        )
         return discrete_action_batch.astype(self.space.dtype).ravel()
 
     def discrete_action(self, multi_discrete_action):
@@ -333,7 +368,9 @@ class DiscreteMultiSelection(gym.ActionWrapper, metaclass=mate.WrapperMeta):
         assert isinstance(env, HierarchicalCamera)
         assert env.multi_selection
 
-        self.action_mapper = MultiDiscrete2DiscreteActionMapper(original_space=env.camera_action_space)
+        self.action_mapper = MultiDiscrete2DiscreteActionMapper(
+            original_space=env.camera_action_space
+        )
 
         self.camera_action_space = self.action_mapper.space
         self.action_mask_space = self.action_mapper.mask_space

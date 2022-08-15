@@ -26,16 +26,12 @@ def main():
     camera_infos = None
 
     for i in range(MAX_EPISODE_STEPS):
-        camera_joint_action = mate.group_step(env, camera_agents,
-                                              camera_joint_observation,
-                                              camera_infos)
+        camera_joint_action = mate.group_step(
+            env, camera_agents, camera_joint_observation, camera_infos
+        )
 
-        (
-            camera_joint_observation,
-            camera_team_reward,
-            done,
-            camera_infos
-        ) = env.step(camera_joint_action)
+        results = env.step(camera_joint_action)
+        camera_joint_observation, camera_team_reward, done, camera_infos = results
 
         env.render()
         if done:

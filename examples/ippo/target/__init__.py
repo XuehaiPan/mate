@@ -3,4 +3,5 @@
 from examples.ippo.target.agent import IPPOTargetAgent
 from examples.ippo.target.config import config
 
+
 TargetAgent = IPPOTargetAgent

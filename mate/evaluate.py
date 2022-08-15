@@ -69,23 +69,27 @@ COLUMNS = [
            width=32, color='green', bold=True),
     Column(name='FPS', fmt='{:.1f}'.format,
            width=5, color='yellow'),
-]
+]  # fmt: skip
 COLUMNS = OrderedDict([(column.name, column) for column in COLUMNS])
 
 
 def load_entry(entry_point):
     """Load a module attribute from given entry point."""
 
-    mod_name, attr_name = entry_point.split(":")
+    mod_name, attr_name = entry_point.split(':')
     mod = importlib.import_module(mod_name)
     entry = getattr(mod, attr_name)
     return entry
 
 
-def evaluate(env, target_agents, render=False, video_path=None):  # pylint: disable=missing-function-docstring,too-many-locals,too-many-branches,too-many-statements
+def evaluate(
+    env, target_agents, render=False, video_path=None
+):  # pylint: disable=missing-function-docstring,too-many-locals,too-many-branches,too-many-statements
     status = {}
     if render and video_path is not None:
-        from gym.wrappers.monitoring.video_recorder import VideoRecorder  # pylint: disable=import-outside-toplevel
+        from gym.wrappers.monitoring.video_recorder import (
+            VideoRecorder,  # pylint: disable=import-outside-toplevel
+        )
 
         video_path = os.path.realpath(video_path)
         print(f'Rollout video will be saved to "{video_path}".')
@@ -112,24 +116,28 @@ def evaluate(env, target_agents, render=False, video_path=None):  # pylint: disa
     time_start = time.perf_counter()
     coverage_rates = []
     while env.episode_step < env.max_episode_steps:
-        target_joint_action = mate.group_step(env, target_agents,
-                                              target_joint_observation,
-                                              target_infos)
+        target_joint_action = mate.group_step(
+            env, target_agents, target_joint_observation, target_infos
+        )
 
-        target_joint_observation, target_team_reward, done, target_infos = env.step(target_joint_action)
+        target_joint_observation, target_team_reward, done, target_infos = env.step(
+            target_joint_action
+        )
         coverage_rates.append(env.coverage_rate)
 
         num_cargoes = env.num_delivered_cargoes
         target_team_episode_reward += target_team_reward
 
         values = [
-            env.episode_step, num_cargoes,
-            target_team_reward, target_team_episode_reward,
+            env.episode_step,
+            num_cargoes,
+            target_team_reward,
+            target_team_episode_reward,
             env.episode_step / num_cargoes if num_cargoes > 0 else np.nan,
             env.mean_transport_rate,
             np.mean(coverage_rates),
             target_team_episode_reward / env.max_target_team_episode_reward,
-            env.episode_step / (time.perf_counter() - time_start)
+            env.episode_step / (time.perf_counter() - time_start),
         ]
 
         if num_cargoes > 0 or done:
@@ -161,64 +169,168 @@ def evaluate(env, target_agents, render=False, video_path=None):  # pylint: disa
 
 
 def parse_arguments():  # pylint: disable=missing-function-docstring
-    parser = argparse.ArgumentParser(prog='python -m mate.evaluate',
-                                     description='Evaluation script for the Multi-Agent Tracking Environment.',
-                                     formatter_class=argparse.RawTextHelpFormatter, add_help=False)
-    parser.add_argument('--help', '-h', action='help', default=argparse.SUPPRESS,
-                        help='Show this help message and exit.')
+    parser = argparse.ArgumentParser(
+        prog='python -m mate.evaluate',
+        description='Evaluation script for the Multi-Agent Tracking Environment.',
+        formatter_class=argparse.RawTextHelpFormatter,
+        add_help=False,
+    )
+    parser.add_argument(
+        '--help',
+        '-h',
+        action='help',
+        default=argparse.SUPPRESS,
+        help='Show this help message and exit.',
+    )
 
     environment_parser = parser.add_argument_group('environment')
-    environment_parser.add_argument('--config', '--cfg', type=str, metavar='PATH', default=None,
-                                    help='Path to a JSON/YAML configuration file of MultiAgentTracking.')
-    environment_parser.add_argument('--enhanced-observation', type=str, metavar='TEAM', default='none', const='both',
-                                    nargs='?', choices=['both', 'camera', 'target', 'none'],
-                                    help="Enhance the agent's observation in the given team.\n"
-                                         "If the argument is omitted, set for both teams.")
-    environment_parser.add_argument('--shared-field-of-view', type=str, metavar='TEAM', default='none', const='both',
-                                    nargs='?', choices=['both', 'camera', 'target', 'none'],
-                                    help="Share the field of view among agents in the given team.\n"
-                                         "If the argument is omitted, set for both teams.")
-    environment_parser.add_argument('--no-communication', type=str, metavar='TEAM', default='none', const='both',
-                                    nargs='?', choices=['both', 'camera', 'target', 'none'],
-                                    help='Disable all communications for the given team.\n'
-                                         'If the argument is omitted, set for both teams.')
-    environment_parser.add_argument('--seed', type=int, metavar='SEED', default=0,
-                                    help='Random seed for RNGs, overwrites agent arguments. (default: %(default)d)')
-    environment_parser.add_argument('--episodes', type=int, metavar='EPISODE', default=20,
-                                    help='Number of episodes to evaluate. (default: %(default)d)')
+    environment_parser.add_argument(
+        '--config',
+        '--cfg',
+        type=str,
+        metavar='PATH',
+        default=None,
+        help='Path to a JSON/YAML configuration file of MultiAgentTracking.',
+    )
+    environment_parser.add_argument(
+        '--enhanced-observation',
+        type=str,
+        metavar='TEAM',
+        default='none',
+        const='both',
+        nargs='?',
+        choices=['both', 'camera', 'target', 'none'],
+        help=(
+            "Enhance the agent's observation in the given team.\n"
+            'If the argument is omitted, set for both teams.'
+        ),
+    )
+    environment_parser.add_argument(
+        '--shared-field-of-view',
+        type=str,
+        metavar='TEAM',
+        default='none',
+        const='both',
+        nargs='?',
+        choices=['both', 'camera', 'target', 'none'],
+        help=(
+            'Share the field of view among agents in the given team.\n'
+            'If the argument is omitted, set for both teams.'
+        ),
+    )
+    environment_parser.add_argument(
+        '--no-communication',
+        type=str,
+        metavar='TEAM',
+        default='none',
+        const='both',
+        nargs='?',
+        choices=['both', 'camera', 'target', 'none'],
+        help=(
+            'Disable all communications for the given team.\n'
+            'If the argument is omitted, set for both teams.'
+        ),
+    )
+    environment_parser.add_argument(
+        '--seed',
+        type=int,
+        metavar='SEED',
+        default=0,
+        help='Random seed for RNGs, overwrites agent arguments. (default: %(default)d)',
+    )
+    environment_parser.add_argument(
+        '--episodes',
+        type=int,
+        metavar='EPISODE',
+        default=20,
+        help='Number of episodes to evaluate. (default: %(default)d)',
+    )
 
     agent_parser = parser.add_argument_group('agent')
-    agent_parser.add_argument('--camera-agent', type=load_entry, metavar='ENTRY',
-                              default='mate:GreedyCameraAgent',
-                              help='Entry point of camera agent class.\n'
-                                   '(default: %(default)s)')
-    agent_parser.add_argument('--target-agent', type=load_entry, metavar='ENTRY',
-                              default='mate:GreedyTargetAgent',
-                              help='Entry point of target agent class.\n'
-                                   '(default: %(default)s)')
-    agent_parser.add_argument('--camera-kwargs', type=json.loads, metavar='STRING', default='{}',
-                              help="Keyword arguments of camera agents in JSON string.\n"
-                                   "(example: '{\"discrete_levels\": 5}', default: '{}')")
-    agent_parser.add_argument('--target-kwargs', type=json.loads, metavar='STRING', default='{}',
-                              help="Keyword arguments of target agents in JSON string.\n"
-                                   "(example: '{\"discrete_levels\": 5}', default: '{}')")
-    agent_parser.add_argument('--camera-discrete-levels', type=int, metavar='LEVEL', default=None,
-                              help='Levels of discrete action space for camera agents,\n'
-                                   'continuous action space will be used if not present.')
-    agent_parser.add_argument('--target-discrete-levels', type=int, metavar='LEVEL', default=None,
-                              help='Levels of discrete action space for camera agents,\n'
-                                   'continuous action space will be used if not present.')
+    agent_parser.add_argument(
+        '--camera-agent',
+        type=load_entry,
+        metavar='ENTRY',
+        default='mate:GreedyCameraAgent',
+        help='Entry point of camera agent class.\n' '(default: %(default)s)',
+    )
+    agent_parser.add_argument(
+        '--target-agent',
+        type=load_entry,
+        metavar='ENTRY',
+        default='mate:GreedyTargetAgent',
+        help='Entry point of target agent class.\n' '(default: %(default)s)',
+    )
+    agent_parser.add_argument(
+        '--camera-kwargs',
+        type=json.loads,
+        metavar='STRING',
+        default='{}',
+        help=(
+            'Keyword arguments of camera agents in JSON string.\n'
+            "(example: '{\"discrete_levels\": 5}', default: '{}')"
+        ),
+    )
+    agent_parser.add_argument(
+        '--target-kwargs',
+        type=json.loads,
+        metavar='STRING',
+        default='{}',
+        help=(
+            'Keyword arguments of target agents in JSON string.\n'
+            "(example: '{\"discrete_levels\": 5}', default: '{}')"
+        ),
+    )
+    agent_parser.add_argument(
+        '--camera-discrete-levels',
+        type=int,
+        metavar='LEVEL',
+        default=None,
+        help=(
+            'Levels of discrete action space for camera agents,\n'
+            'continuous action space will be used if not present.'
+        ),
+    )
+    agent_parser.add_argument(
+        '--target-discrete-levels',
+        type=int,
+        metavar='LEVEL',
+        default=None,
+        help=(
+            'Levels of discrete action space for camera agents,\n'
+            'continuous action space will be used if not present.'
+        ),
+    )
 
     rendering_parser = parser.add_argument_group('rendering')
-    rendering_parser.add_argument('--no-render', action='store_true',
-                                  help='Do not render the environment.\n'
-                                       'Suppress options `--render-communication` and `--save-video`.')
-    rendering_parser.add_argument('--render-communication', type=int, metavar='DURATION',
-                                  default=None, const=20, nargs='?',
-                                  help='Draw arrows for communication edges in the rendering results.\n'
-                                       '(default duration: %(const)d)')
-    rendering_parser.add_argument('--save-video', type=str, metavar='PATH', nargs='?', default=argparse.SUPPRESS,
-                                  help='Save the render video (default: "video.mp4")')
+    rendering_parser.add_argument(
+        '--no-render',
+        action='store_true',
+        help=(
+            'Do not render the environment.\n'
+            'Suppress options `--render-communication` and `--save-video`.'
+        ),
+    )
+    rendering_parser.add_argument(
+        '--render-communication',
+        type=int,
+        metavar='DURATION',
+        default=None,
+        const=20,
+        nargs='?',
+        help=(
+            'Draw arrows for communication edges in the rendering results.\n'
+            '(default duration: %(const)d)'
+        ),
+    )
+    rendering_parser.add_argument(
+        '--save-video',
+        type=str,
+        metavar='PATH',
+        nargs='?',
+        default=argparse.SUPPRESS,
+        help='Save the render video (default: "video.mp4")',
+    )
 
     args = parser.parse_args()
 
@@ -230,10 +342,9 @@ def parse_arguments():  # pylint: disable=missing-function-docstring
         f'You should provide a subclass of `mate.TargetAgentBase`. '
         f'Got target_agent = {args.target_agent}.'
     )
-    assert args.episodes > 0, (
-        f'The argument `episodes` should be a positive number. '
-        f'Got episodes = {args.episodes}.'
-    )
+    assert (
+        args.episodes > 0
+    ), f'The argument `episodes` should be a positive number. Got episodes = {args.episodes}.'
 
     if not hasattr(args, 'save_video'):
         args.save_video = None
@@ -242,7 +353,9 @@ def parse_arguments():  # pylint: disable=missing-function-docstring
     if args.no_render:
         args.save_video = None
     if args.save_video is not None and parse_version(gym.__version__) < parse_version('0.18.3'):
-        gym.logger.warn('Video recording requires gym 0.18.3 or higher (current version: %s).', gym.__version__)
+        gym.logger.warn(
+            'Video recording requires gym 0.18.3 or higher (current version: %s).', gym.__version__
+        )
 
     if args.no_render:
         args.render_communication = False
@@ -253,10 +366,12 @@ def parse_arguments():  # pylint: disable=missing-function-docstring
     args.target_kwargs.move_to_end('seed')
     camera_kwargs_joined = ', '.join(f'{k}={v!r}' for k, v in args.camera_kwargs.items())
     target_kwargs_joined = ', '.join(f'{k}={v!r}' for k, v in args.target_kwargs.items())
-    args.camera_name = '{cls.__module__}.{cls.__name__}({kwargs})'.format(cls=args.camera_agent,
-                                                                          kwargs=camera_kwargs_joined)
-    args.target_name = '{cls.__module__}.{cls.__name__}({kwargs})'.format(cls=args.target_agent,
-                                                                          kwargs=target_kwargs_joined)
+    args.camera_name = '{cls.__module__}.{cls.__name__}({kwargs})'.format(
+        cls=args.camera_agent, kwargs=camera_kwargs_joined
+    )
+    args.target_name = '{cls.__module__}.{cls.__name__}({kwargs})'.format(
+        cls=args.target_agent, kwargs=target_kwargs_joined
+    )
 
     return args
 
@@ -277,7 +392,9 @@ def main():  # pylint: disable=missing-function-docstring,too-many-branches,too-
     if args.no_communication != 'none':
         wrappers.append(mate.WrapperSpec(mate.NoCommunication, team=args.no_communication))
     if args.render_communication is not None:
-        wrappers.append(mate.WrapperSpec(mate.RenderCommunication, duration=args.render_communication))
+        wrappers.append(
+            mate.WrapperSpec(mate.RenderCommunication, duration=args.render_communication)
+        )
     if args.camera_discrete_levels is not None:
         wrappers.append(mate.WrapperSpec(mate.DiscreteCamera, levels=args.camera_discrete_levels))
     if args.target_discrete_levels is not None:
@@ -293,9 +410,13 @@ def main():  # pylint: disable=missing-function-docstring,too-many-branches,too-
 
     target_agents = target_agent.spawn(env.num_targets)
 
-    keys = ['Step / Cargo', 'Target Episode Reward',
-            'Mean Transport Rate', 'Mean Coverage Rate',
-            'Normalized Target Episode Reward']
+    keys = [
+        'Step / Cargo',
+        'Target Episode Reward',
+        'Mean Transport Rate',
+        'Mean Coverage Rate',
+        'Normalized Target Episode Reward',
+    ]
     statuses = OrderedDict([(key, []) for key in keys])
     initial = 0
     postfix = None
@@ -315,15 +436,22 @@ def main():  # pylint: disable=missing-function-docstring,too-many-branches,too-
                 ('MeanTransportRate', f'{100.0 * np.mean(statuses["Mean Transport Rate"]):.1f}%'),
                 ('NormalizedTargetEpisodeReward', f'{np.mean(statuses["Normalized Target Episode Reward"]):+.5f}'),
                 ('FPS', status['FPS'])
-            ])
+            ])  # fmt: skip
         finally:
             if env.viewer is not None:
                 env.viewer.close()
                 env.viewer = None
 
     try:
-        with tqdm.trange(initial, args.episodes, desc='Evaluating', unit='episode',
-                         total=args.episodes, initial=initial, postfix=postfix) as pbar:
+        with tqdm.trange(
+            initial,
+            args.episodes,
+            desc='Evaluating',
+            unit='episode',
+            total=args.episodes,
+            initial=initial,
+            postfix=postfix,
+        ) as pbar:
             for _ in pbar:
                 status = evaluate(env, target_agents, render=False)
                 for key in keys:
@@ -333,17 +461,19 @@ def main():  # pylint: disable=missing-function-docstring,too-many-branches,too-
                     ('MeanTransportRate', f'{100.0 * np.mean(statuses["Mean Transport Rate"]):.1f}%'),
                     ('NormalizedTargetEpisodeReward', f'{np.mean(statuses["Normalized Target Episode Reward"]):+.5f}'),
                     ('FPS', status['FPS'])
-                ]))
+                ]))  # fmt: skip
     except KeyboardInterrupt:
         pass
 
-    if len(statuses[keys[-1]]) > 0:
-        # pylint: disable=consider-using-f-string
+    if len(statuses[keys[-1]]) > 0:  # pylint: disable=consider-using-f-string
         print('| {:>32} | {:>12} |'.format('Metric', 'Mean'))
         print('| {:->32} | {:->12} |'.format(':', ':'))
         for key, values in statuses.items():
-            print('|{}|{}|'.format(COLUMNS[key].title(width=32),
-                                   COLUMNS[key].format(np.mean(values), width=12)))
+            print(
+                '|{}|{}|'.format(
+                    COLUMNS[key].title(width=32), COLUMNS[key].format(np.mean(values), width=12)
+                )
+            )
 
 
 if __name__ == '__main__':
