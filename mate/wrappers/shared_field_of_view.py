@@ -70,6 +70,7 @@ class SharedFieldOfView(gym.ObservationWrapper, metaclass=WrapperMeta):
 
         self.__init__(self.env, team=self.team)
 
+    # pylint: disable-next=too-many-locals
     def observation(
         self, observation: Tuple[np.ndarray, np.ndarray]
     ) -> Tuple[np.ndarray, np.ndarray]:

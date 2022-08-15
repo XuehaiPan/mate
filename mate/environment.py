@@ -1012,11 +1012,7 @@ class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
                     * np.array([(1.0, 1.0), (-1.0, 1.0), (-1.0, -1.0), (1.0, -1.0)])
                 )
                 image = rendering.Image(
-                    ASSETS_DIR
-                    / 'images'
-                    / 'warehouse-{:d}{:d}.png'.format(
-                        *key
-                    ),  # pylint: disable=consider-using-f-string
+                    ASSETS_DIR / 'images' / f'warehouse-{key[0]:d}{key[1]:d}.png',
                     1.8 * consts.WAREHOUSE_RADIUS,
                     1.8 * consts.WAREHOUSE_RADIUS,
                 )

@@ -262,9 +262,8 @@ class CameraStatePrivate(CameraStatePublic):
     @property
     def action_space(self) -> spaces.Box:
         return spaces.Box(
-            low=np.asarray(
-                [-self.rotation_step, -self.zooming_step]
-            ),  # pylint: disable=invalid-unary-operand-type
+            # pylint: disable-next=invalid-unary-operand-type
+            low=np.asarray([-self.rotation_step, -self.zooming_step]),
             high=np.asarray([self.rotation_step, self.zooming_step]),
             dtype=np.float64,
         )
@@ -334,9 +333,8 @@ class TargetStatePrivate(StateBase):
     @property
     def action_space(self) -> spaces.Box:
         return spaces.Box(
-            low=np.asarray(
-                [-self.step_size, -self.step_size]
-            ),  # pylint: disable=invalid-unary-operand-type
+            # pylint: disable-next=invalid-unary-operand-type
+            low=np.asarray([-self.step_size, -self.step_size]),
             high=np.asarray([self.step_size, self.step_size]),
             dtype=np.float64,
         )

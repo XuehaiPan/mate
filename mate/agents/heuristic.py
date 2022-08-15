@@ -260,9 +260,8 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
         coord_grid = polar2cartesian(rho, phi).transpose()
 
         scores = np.zeros((len(coord_grid), len(state_mesh)), dtype=np.float64)
-        for s, (orientation, viewing_angle, sight_range) in enumerate(
-            state_mesh
-        ):  # pylint: disable=invalid-name
+        # pylint: disable-next=invalid-name
+        for s, (orientation, viewing_angle, sight_range) in enumerate(state_mesh):
             half_viewing_angle = viewing_angle / 2.0
             if viewing_angle < 180.0:
                 dist_max = sight_range / (1.0 + 1.0 / sin_deg(half_viewing_angle))

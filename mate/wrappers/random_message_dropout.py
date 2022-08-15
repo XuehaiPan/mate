@@ -20,8 +20,8 @@ class RandomMessageDropout(MessageFilter):
 
         super().__init__(env, filter=functools.partial(self.filter, dropout_rate=self.dropout_rate))
 
-    # pylint: disable-next=unused-argument
     @staticmethod
+    # pylint: disable-next=unused-argument
     def filter(env: MateEnvironmentType, message: Message, dropout_rate: float) -> bool:
         """Randomly drop messages."""
 

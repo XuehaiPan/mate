@@ -87,9 +87,8 @@ def evaluate(
 ):  # pylint: disable=missing-function-docstring,too-many-locals,too-many-branches,too-many-statements
     status = {}
     if render and video_path is not None:
-        from gym.wrappers.monitoring.video_recorder import (
-            VideoRecorder,  # pylint: disable=import-outside-toplevel
-        )
+        # pylint: disable-next=import-outside-toplevel
+        from gym.wrappers.monitoring.video_recorder import VideoRecorder
 
         video_path = os.path.realpath(video_path)
         print(f'Rollout video will be saved to "{video_path}".')
@@ -465,7 +464,8 @@ def main():  # pylint: disable=missing-function-docstring,too-many-branches,too-
     except KeyboardInterrupt:
         pass
 
-    if len(statuses[keys[-1]]) > 0:  # pylint: disable=consider-using-f-string
+    if len(statuses[keys[-1]]) > 0:
+        # pylint: disable=consider-using-f-string
         print('| {:>32} | {:>12} |'.format('Metric', 'Mean'))
         print('| {:->32} | {:->12} |'.format(':', ':'))
         for key, values in statuses.items():
@@ -474,6 +474,7 @@ def main():  # pylint: disable=missing-function-docstring,too-many-branches,too-
                     COLUMNS[key].title(width=32), COLUMNS[key].format(np.mean(values), width=12)
                 )
             )
+        # pylint: disable-enable=consider-using-f-string
 
 
 if __name__ == '__main__':

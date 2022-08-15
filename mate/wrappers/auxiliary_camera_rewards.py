@@ -192,7 +192,7 @@ class AuxiliaryCameraRewards(gym.Wrapper, metaclass=WrapperMeta):
 
         return auxiliary_reward_matrix
 
-    # pylint: disable-next=too-many-locals
+    # pylint: disable=too-many-locals
     @staticmethod
     def compute_soft_coverage_score(camera, targets, tracked_bits: np.ndarray) -> List[float]:
         """The soft coverage score is proportional to the distance from the target to the camera's boundary."""
