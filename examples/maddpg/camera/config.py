@@ -81,9 +81,9 @@ config = {
         'custom_model_config': {
             **MODEL_DEFAULTS,
             'actor_hiddens': [512, 256],
-            'actor_hidden_activation': 'relu',
+            'actor_hidden_activation': 'tanh',
             'critic_hiddens': [512, 256],
-            'critic_hidden_activation': 'relu',
+            'critic_hidden_activation': 'tanh',
             'max_seq_len': 25,
             'vf_share_layers': False,
         },

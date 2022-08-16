@@ -76,7 +76,7 @@ config = {
     'model': {
         **MODEL_DEFAULTS,
         'fcnet_hiddens': [512, 256],
-        'fcnet_activation': 'relu',
+        'fcnet_activation': 'tanh',
         'use_lstm': True,
         'lstm_cell_size': 256,
         'max_seq_len': 25,

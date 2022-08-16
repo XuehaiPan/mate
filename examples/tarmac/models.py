@@ -58,9 +58,9 @@ class TarMACModel(TorchRNN, nn.Module):
         name,
         # Extra MAPPOModel arguments
         actor_hiddens=None,
-        actor_hidden_activation='relu',
+        actor_hidden_activation='tanh',
         critic_hiddens=None,
-        critic_hidden_activation='relu',
+        critic_hidden_activation='tanh',
         lstm_cell_size=256,
         # Extra TarMACModel arguments
         message_key_dim=32,

@@ -86,7 +86,7 @@ config = {
     'model': {
         **MODEL_DEFAULTS,
         'fcnet_hiddens': [512, 256],  # not used
-        'fcnet_activation': 'relu',
+        'fcnet_activation': 'tanh',
         'lstm_cell_size': 256,
         'max_seq_len': 10000,  # for complete episode
     },

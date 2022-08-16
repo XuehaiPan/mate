@@ -6,7 +6,7 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.recurrent_net import RecurrentNetwork as TorchRNN
 from ray.rllib.utils.framework import try_import_torch
 
-from examples.utils import SimpleRNN, get_space_flat_size
+from examples.utils import SimpleRNN, get_space_flat_size, orthogonal_initializer
 
 
 torch, nn = try_import_torch()
@@ -22,9 +22,9 @@ class MAPPOModel(TorchRNN, nn.Module):
         name,
         # Extra MAPPOModel arguments
         actor_hiddens=None,
-        actor_hidden_activation='relu',
+        actor_hidden_activation='tanh',
         critic_hiddens=None,
-        critic_hidden_activation='relu',
+        critic_hidden_activation='tanh',
         lstm_cell_size=256,
         **kwargs,
     ):
@@ -89,6 +89,8 @@ class MAPPOModel(TorchRNN, nn.Module):
             output_dim=num_outputs,
             activation=self.actor_hidden_activation,
             output_activation=None,
+            hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+            output_weight_initializer=orthogonal_initializer(scale=0.01),
         )
 
         self.critic = SimpleRNN(
@@ -99,6 +101,8 @@ class MAPPOModel(TorchRNN, nn.Module):
             output_dim=1,
             activation=self.critic_hidden_activation,
             output_activation=None,
+            hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+            output_weight_initializer=orthogonal_initializer(scale=1.0),
         )
 
     def get_initial_state(self):

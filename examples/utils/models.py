@@ -1,13 +1,31 @@
+import functools
 from collections import OrderedDict
 
-from ray.rllib.models.torch.misc import SlimFC, normc_initializer
+import numpy as np
+from ray.rllib.models.torch.misc import SlimFC
 from ray.rllib.utils.framework import try_import_torch
 
 
-__all__ = ['SimpleMLP', 'SimpleRNN']
+__all__ = ['SimpleMLP', 'SimpleRNN', 'normal_initializer', 'orthogonal_initializer']
 
 
 torch, nn = try_import_torch()
+
+
+@torch.no_grad()
+def initialize_(tensor, scale=1.0, initializer=nn.init.normal_, activation='relu'):
+    initializer(tensor)
+    if activation is not None:
+        scale *= nn.init.calculate_gain(nonlinearity=activation)
+    tensor.data.mul_(scale / torch.sqrt(tensor.data.square().sum(dim=-1, keepdim=True)))
+
+
+def normal_initializer(scale=1.0):
+    return functools.partial(initialize_, scale=scale, initializer=nn.init.normal_)
+
+
+def orthogonal_initializer(scale=1.0):
+    return functools.partial(initialize_, scale=scale, initializer=nn.init.orthogonal_)
 
 
 class SimpleMLP(nn.Module):
@@ -20,6 +38,8 @@ class SimpleMLP(nn.Module):
         layer_norm=False,
         activation='relu',
         output_activation=None,
+        hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+        output_weight_initializer=orthogonal_initializer(scale=1.0),
     ):
         super().__init__()
 
@@ -30,6 +50,13 @@ class SimpleMLP(nn.Module):
         self.activation = activation
         self.output_activation = output_activation
 
+        hidden_weight_initializer = functools.partial(
+            hidden_weight_initializer, activation=self.activation
+        )
+        output_weight_initializer = functools.partial(
+            output_weight_initializer, activation=self.output_activation
+        )
+
         hidden_layers = []
         hidden_dims = [input_dim, *hidden_dims]
         for i, (in_size, out_size) in enumerate(zip(hidden_dims[:-1], hidden_dims[1:])):
@@ -39,8 +66,10 @@ class SimpleMLP(nn.Module):
                     SlimFC(
                         in_size=in_size,
                         out_size=out_size,
-                        initializer=normc_initializer(1.0),
                         activation_fn=self.activation,
+                        initializer=hidden_weight_initializer,
+                        use_bias=True,
+                        bias_init=0.0,
                     ),
                 )
             )
@@ -50,8 +79,10 @@ class SimpleMLP(nn.Module):
         self.output = SlimFC(
             in_size=hidden_dims[-1],
             out_size=self.output_dim,
-            initializer=normc_initializer(0.01),
             activation_fn=self.output_activation,
+            initializer=output_weight_initializer,
+            use_bias=True,
+            bias_init=0.0,
         )
 
         self._last_features = None
@@ -90,6 +121,8 @@ class SimpleRNN(nn.Module):
         output_dim,
         activation='relu',
         output_activation=None,
+        hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+        output_weight_initializer=orthogonal_initializer(scale=1.0),
     ):
         super().__init__()
 
@@ -101,6 +134,13 @@ class SimpleRNN(nn.Module):
         self.activation = activation
         self.output_activation = output_activation
 
+        hidden_weight_initializer = functools.partial(
+            hidden_weight_initializer, activation=self.activation
+        )
+        output_weight_initializer = functools.partial(
+            output_weight_initializer, activation=self.output_activation
+        )
+
         hidden_layers = []
         hidden_dims = [input_dim, *hidden_dims]
         for i, (in_size, out_size) in enumerate(zip(hidden_dims[:-1], hidden_dims[1:])):
@@ -110,8 +150,10 @@ class SimpleRNN(nn.Module):
                     SlimFC(
                         in_size=in_size,
                         out_size=out_size,
-                        initializer=normc_initializer(1.0),
                         activation_fn=self.activation,
+                        initializer=hidden_weight_initializer,
+                        use_bias=True,
+                        bias_init=0.0,
                     ),
                 )
             )
@@ -120,8 +162,10 @@ class SimpleRNN(nn.Module):
         self.output = SlimFC(
             in_size=hidden_dims[-1] + self.cell_size,
             out_size=self.output_dim,
-            initializer=normc_initializer(0.01),
             activation_fn=self.output_activation,
+            initializer=output_weight_initializer,
+            use_bias=True,
+            bias_init=0.0,
         )
 
         self._last_features = None

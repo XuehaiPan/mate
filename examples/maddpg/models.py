@@ -7,7 +7,7 @@ from ray.rllib.models import ModelCatalog
 from ray.rllib.models.torch.torch_modelv2 import TorchModelV2
 from ray.rllib.utils.framework import try_import_torch
 
-from examples.utils import SimpleMLP, get_space_flat_size
+from examples.utils import SimpleMLP, get_space_flat_size, orthogonal_initializer
 
 
 torch, nn = try_import_torch()
@@ -43,9 +43,9 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
         name,
         # Extra MADDPGModel arguments
         actor_hiddens=None,
-        actor_hidden_activation='relu',
+        actor_hidden_activation='tanh',
         critic_hiddens=None,
-        critic_hidden_activation='relu',
+        critic_hidden_activation='tanh',
         twin_q=False,
         add_layer_norm=False,
         **kwargs,
@@ -106,6 +106,8 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
             layer_norm=add_layer_norm,
             activation=self.actor_hidden_activation,
             output_activation=None,
+            hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+            output_weight_initializer=orthogonal_initializer(scale=0.01),
         )
         if self.action_space.is_bounded('both'):
             self.policy_model = nn.Sequential(policy_model, SquashAction(self.action_space))
@@ -120,6 +122,8 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
             layer_norm=add_layer_norm,
             activation=self.critic_hidden_activation,
             output_activation=None,
+            hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+            output_weight_initializer=orthogonal_initializer(scale=1.0),
         )
         self.q_model = SimpleMLP(**q_model_kwargs)
         if twin_q:

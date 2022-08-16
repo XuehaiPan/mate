@@ -11,7 +11,13 @@ from ray.rllib.policy.sample_batch import SampleBatch
 from ray.rllib.utils.framework import try_import_torch
 from ray.rllib.utils.torch_utils import one_hot, sequence_mask
 
-from examples.utils import SimpleMLP, SimpleRNN, get_preprocessor, get_space_flat_size
+from examples.utils import (
+    SimpleMLP,
+    SimpleRNN,
+    get_preprocessor,
+    get_space_flat_size,
+    orthogonal_initializer,
+)
 
 
 torch, nn = try_import_torch()
@@ -65,9 +71,9 @@ class I2CModel(TorchRNN, nn.Module):
         name,
         # Extra MAPPOModel arguments
         actor_hiddens=None,
-        actor_hidden_activation='relu',
+        actor_hidden_activation='tanh',
         critic_hiddens=None,
-        critic_hidden_activation='relu',
+        critic_hidden_activation='tanh',
         lstm_cell_size=256,
         # Extra I2CModel arguments
         message_dim=64,
@@ -163,6 +169,8 @@ class I2CModel(TorchRNN, nn.Module):
             output_dim=num_outputs,
             activation=self.actor_hidden_activation,
             output_activation=None,
+            hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+            output_weight_initializer=orthogonal_initializer(scale=0.01),
         )
 
         self.critic = SimpleRNN(
@@ -173,6 +181,8 @@ class I2CModel(TorchRNN, nn.Module):
             output_dim=1,
             activation=self.critic_hidden_activation,
             output_activation=None,
+            hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+            output_weight_initializer=orthogonal_initializer(scale=1.0),
         )
 
         self.joint_q_network = SimpleMLP(
@@ -182,6 +192,8 @@ class I2CModel(TorchRNN, nn.Module):
             output_dim=1,
             activation=self.critic_hidden_activation,
             output_activation=None,
+            hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+            output_weight_initializer=orthogonal_initializer(scale=1.0),
         )
 
         self.policy_corr_reg_coeff = policy_corr_reg_coeff
@@ -194,6 +206,8 @@ class I2CModel(TorchRNN, nn.Module):
             output_dim=1,
             activation=self.actor_hidden_activation,
             output_activation=None,
+            hidden_weight_initializer=orthogonal_initializer(scale=1.0),
+            output_weight_initializer=orthogonal_initializer(scale=1.0),
         )
         self.prior_percentile = prior_percentile
         self.register_buffer(

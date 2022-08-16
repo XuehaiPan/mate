@@ -75,7 +75,7 @@ config = {
     'model': {
         **MODEL_DEFAULTS,
         'fcnet_hiddens': [512, 512, 256],
-        'fcnet_activation': 'relu',
+        'fcnet_activation': 'tanh',
         'max_seq_len': 25,
     },
     # === Policy ===================================================================================

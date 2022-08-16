@@ -7,7 +7,18 @@ import itertools
 import os
 from collections import OrderedDict, defaultdict, deque
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Union,
+)
 
 import gym
 import numpy as np
@@ -45,7 +56,7 @@ if TYPE_CHECKING:
     from mate.agents import AgentType
 
 
-def _did_you_mean(path: Union[str, Path]) -> Tuple[str, ...]:
+def _did_you_mean(path: Union[str, os.PathLike]) -> Tuple[str, ...]:
     path = str(path)
 
     def edit_distance(str1: str, str2: str) -> int:
@@ -85,7 +96,7 @@ def _did_you_mean(path: Union[str, Path]) -> Tuple[str, ...]:
     return candidates
 
 
-def _deep_update(dict1, dict2, prefix=''):
+def _deep_update(dict1: Dict[str, Any], dict2: Dict[str, Any], prefix: str = '') -> Dict[str, Any]:
     dict1, dict2 = copy.deepcopy(dict1), copy.deepcopy(dict2)
     for key, value in dict2.items():
         if isinstance(dict1.get(key, None), dict) and isinstance(value, dict):
@@ -99,7 +110,9 @@ def _deep_update(dict1, dict2, prefix=''):
 
 
 # pylint: disable-next=too-many-branches
-def read_config(config_or_path: Optional[Union[Dict[str, Any], str]], **kwargs) -> Dict[str, Any]:
+def read_config(
+    config_or_path: Optional[Union[Dict[str, Any], str]] = None, **kwargs
+) -> Dict[str, Any]:
     """Load configuration from a dictionary mapping or a JSON/YAML file."""
 
     if isinstance(config_or_path, str) and not os.path.exists(config_or_path):
@@ -117,7 +130,9 @@ def read_config(config_or_path: Optional[Union[Dict[str, Any], str]], **kwargs) 
                 f'Did you mean: "{candidates[0]}"?'
             )
 
-    if not isinstance(config_or_path, dict):
+    if config_or_path is None:
+        config = {}
+    elif not isinstance(config_or_path, Mapping):
         config = None
         if isinstance(config_or_path, os.PathLike):
             config_or_path = str(config_or_path)
@@ -140,7 +155,7 @@ def read_config(config_or_path: Optional[Union[Dict[str, Any], str]], **kwargs) 
                 f'Got {config_or_path!r}.'
             )
     else:
-        config = config_or_path
+        config = dict(config_or_path)
 
     config = _deep_update(config, kwargs)
     validate_config(config)
@@ -547,7 +562,7 @@ class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
         )
 
         self._np_random = None
-        self.reset(seed=0)
+        self.seed(seed=0)
 
     def load_config(self, config: Optional[Union[Dict[str, Any], str]] = None) -> None:
         """Reinitialize the Multi-Agent Tracking Environment from a dictionary
