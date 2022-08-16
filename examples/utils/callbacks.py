@@ -211,10 +211,10 @@ class CustomMetricCallback(RLlibCallbackBase):
 
         self.custom_metrics = custom_metrics or self.DEFAULT_CUSTOM_METRICS
 
-    def on_episode_start(self, *, worker, base_env, policies, episode, env_index, **kwargs):
+    def on_episode_start(self, *, episode, **kwargs):
         episode.user_data['collector'] = MetricCollector(self.custom_metrics)
 
-    def on_episode_step(self, *, worker, base_env, policies, episode, env_index, **kwargs):
+    def on_episode_step(self, *, episode, **kwargs):
         from ray.rllib.env.wrappers.group_agents_wrapper import GROUP_INFO
 
         infos = []
@@ -223,7 +223,7 @@ class CustomMetricCallback(RLlibCallbackBase):
 
         episode.user_data['collector'].add(infos)
 
-    def on_episode_end(self, *, worker, base_env, policies, episode, env_index, **kwargs):
+    def on_episode_end(self, *, episode, **kwargs):
         collector = episode.user_data['collector']
         custom_metrics = collector.collect()
         for key in tuple(custom_metrics):
@@ -252,7 +252,7 @@ class TrainFromCheckpoint(RLlibCallbackBase):
 
         self.checkpoint_path = checkpoint_path
 
-    def on_trainer_init(self, trainer, **kwargs):
+    def on_trainer_init(self, *, trainer, **kwargs):
         if self.checkpoint_path is None:
             return
 
@@ -265,10 +265,7 @@ class TrainFromCheckpoint(RLlibCallbackBase):
 
         trainer.workers.local_worker().set_weights(weights)
         if trainer.workers.remote_workers():
-            from ray.rllib.utils.metrics import SYNCH_WORKER_WEIGHTS_TIMER
-
-            with trainer._timers[SYNCH_WORKER_WEIGHTS_TIMER]:
-                trainer.workers.sync_weights()
+            trainer.workers.sync_weights()
 
 
 class SymlinkCheckpointCallback(TuneCallbackBase):
@@ -333,7 +330,7 @@ class WandbLoggerCallback(WandbLoggerCallbackBase):
         if api_key_file:
             if api_key:
                 raise ValueError('Both WandB `api_key_file` and `api_key` set.')
-            with open(api_key_file, mode='rt') as file:
+            with open(api_key_file, mode='rt', encoding='UTF-8') as file:
                 api_key = file.readline().strip()
         if api_key:
             os.environ[cls.WANDB_ENV_VAR] = api_key
@@ -360,8 +357,8 @@ class WandbLoggerCallback(WandbLoggerCallbackBase):
 
         try:
             cls.set_api_key(api_key_file, api_key)
-        except ValueError as e:
-            logging.error(e)
+        except ValueError as ex:
+            logging.error(ex)
             return False
 
         return True

@@ -136,7 +136,7 @@ class SimpleRNN(nn.Module):
         ]
 
     def forward(self, x, hx=None, features_only=False):
-        if hx is None or True:
+        if hx is None:
             hx = [h.expand(x.size(0), -1) for h in self.get_initial_state()]
         h, c = hx
 

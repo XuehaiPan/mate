@@ -275,21 +275,20 @@ class I2CModel(TorchRNN, nn.Module):
         def reduce_mean_valid(t, additional_mask=None):
             if additional_mask is None:
                 return torch.sum(t[mask]) / num_valid
-            else:
-                m1 = mask
-                m2 = additional_mask
-                while m1.ndim < t.ndim:
-                    m1 = m1.unsqueeze(dim=-1)
-                while m2.ndim < t.ndim:
-                    m2 = m2.unsqueeze(dim=-1)
 
-                m1 = torch.broadcast_to(m1, t.size())
-                m2 = torch.broadcast_to(m2, t.size())
-                additional_mask = torch.logical_and(m1, m2)
-                if additional_mask.any().item():
-                    return torch.sum(t[additional_mask]) / torch.sum(additional_mask)
-                else:
-                    return t.new(1).zero_()[0]
+            m1 = mask
+            m2 = additional_mask
+            while m1.ndim < t.ndim:
+                m1 = m1.unsqueeze(dim=-1)
+            while m2.ndim < t.ndim:
+                m2 = m2.unsqueeze(dim=-1)
+
+            m1 = torch.broadcast_to(m1, t.size())
+            m2 = torch.broadcast_to(m2, t.size())
+            additional_mask = torch.logical_and(m1, m2)
+            if additional_mask.any().item():
+                return torch.sum(t[additional_mask]) / torch.sum(additional_mask)
+            return t.new(1).zero_()[0]
 
         global_obs = loss_inputs[SampleBatch.OBS]                                   # (B * T, *)
         action = one_hot(loss_inputs[SampleBatch.ACTIONS],                          # (B, T, Da)
