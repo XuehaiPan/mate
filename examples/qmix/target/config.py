@@ -7,8 +7,8 @@ from ray.rllib.models import MODEL_DEFAULTS
 
 import mate
 from examples.utils import (
+    CustomMetricCallback,
     FrameSkip,
-    GroupedCustomMetricCallback,
     RLlibMultiAgentAPI,
     RLlibMultiAgentCentralizedTraining,
 )
@@ -80,7 +80,7 @@ config = {
     },
     'disable_env_checking': True,
     'horizon': 500,
-    'callbacks': GroupedCustomMetricCallback,
+    'callbacks': CustomMetricCallback,
     # === Model ====================================================================================
     'normalize_actions': True,
     'model': {

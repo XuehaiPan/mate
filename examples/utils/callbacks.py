@@ -33,7 +33,6 @@ __all__ = [
     'ShiftAgentActionTimestep',
     'MetricCollector',
     'CustomMetricCallback',
-    'GroupedCustomMetricCallback',
     'TrainFromCheckpoint',
     'SymlinkCheckpointCallback',
     'RLlibMultiCallbacks',
@@ -215,8 +214,13 @@ class CustomMetricCallback(RLlibCallbackBase):
     def on_episode_start(self, *, worker, base_env, policies, episode, env_index, **kwargs):
         episode.user_data['collector'] = MetricCollector(self.custom_metrics)
 
-    def on_episode_step(self, *, worker, base_env, episode, env_index, **kwargs):
-        infos = list(map(episode.last_info_for, episode.get_agents()))
+    def on_episode_step(self, *, worker, base_env, policies, episode, env_index, **kwargs):
+        from ray.rllib.env.wrappers.group_agents_wrapper import GROUP_INFO
+
+        infos = []
+        for info in map(episode.last_info_for, episode.get_agents()):
+            infos.extend(info.get(GROUP_INFO, [info]))
+
         episode.user_data['collector'].add(infos)
 
     def on_episode_end(self, *, worker, base_env, policies, episode, env_index, **kwargs):
@@ -229,15 +233,6 @@ class CustomMetricCallback(RLlibCallbackBase):
                 custom_metrics[f'episode_{key}'] = float(np.sum(collector.data[key]))
 
         episode.custom_metrics.update(custom_metrics)
-
-
-class GroupedCustomMetricCallback(CustomMetricCallback):
-    def on_episode_step(self, *, worker, base_env, episode, env_index, **kwargs):
-        infos = []
-        for group_info in map(episode.last_info_for, episode.get_agents()):
-            infos.extend(group_info['_group_info'])
-
-        episode.user_data['collector'].add(infos)
 
 
 class TrainFromCheckpoint(RLlibCallbackBase):

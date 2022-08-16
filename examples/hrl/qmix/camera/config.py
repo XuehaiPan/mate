@@ -8,7 +8,7 @@ from ray.rllib.models import MODEL_DEFAULTS
 import mate
 from examples.hrl.wrappers import DiscreteMultiSelection, HierarchicalCamera
 from examples.utils import (
-    GroupedCustomMetricCallback,
+    CustomMetricCallback,
     RLlibMultiAgentAPI,
     RLlibMultiAgentCentralizedTraining,
 )
@@ -81,7 +81,7 @@ config = {
     },
     'disable_env_checking': True,
     'horizon': 500,
-    'callbacks': GroupedCustomMetricCallback,
+    'callbacks': CustomMetricCallback,
     # === Model ====================================================================================
     'normalize_actions': True,
     'model': {
