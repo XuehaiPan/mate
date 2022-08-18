@@ -93,9 +93,9 @@ class SelfPlay(Solver):
         return sigma_row, sigma_col
 
 
-class FictitiousPlay(Solver):
-    NAME = 'FictitiousPlay'
-    ABBREVIATED_NAME = 'FP'
+class FictitiousSelfPlay(Solver):
+    NAME = 'FictitiousSelfPlay'
+    ABBREVIATED_NAME = 'FSP'
 
     def solve(self):
         sigma_row = np.ones((self.payoff_matrices.shape[1],), dtype=np.float64)
@@ -108,7 +108,7 @@ class FictitiousPlay(Solver):
 
 
 META_SOLVERS = {}
-for solver in (NashEquilibrium, SelfPlay, FictitiousPlay):
+for solver in (NashEquilibrium, SelfPlay, FictitiousSelfPlay):
     META_SOLVERS[solver.NAME] = solver
     META_SOLVERS[solver.ABBREVIATED_NAME] = solver
 

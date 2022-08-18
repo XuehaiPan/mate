@@ -338,9 +338,9 @@ The following algorithms are implemented in [`examples`](examples):
 - **Rule-based:**
 
   1. **Random** (source: [`mate/agents/random.py`](mate/agents/random.py))
-  2. **Naive** (source: [`mate/agents/naive.py`](mate/agents/naive.py))
-  3. **Greedy** (source: [`mate/agents/greedy.py`](mate/agents/greedy.py))
-  4. **Heuristic** (source: [`mate/agents/heuristic.py`](mate/agents/heuristic.py))
+  1. **Naive** (source: [`mate/agents/naive.py`](mate/agents/naive.py))
+  1. **Greedy** (source: [`mate/agents/greedy.py`](mate/agents/greedy.py))
+  1. **Heuristic** (source: [`mate/agents/heuristic.py`](mate/agents/heuristic.py))
 
 - **Multi-Agent Reinforcement Learning Algorithms:**
 
@@ -359,8 +359,8 @@ The following algorithms are implemented in [`examples`](examples):
 - **Population Based Adversarial Policy Learning**, available meta-solvers:
 
   1. Self-Play (SP)
-  1. Fictitious Play (FP)
-  1. PSRO-Nash (NE)
+  1. Fictitious Self-Play (FSP) (<https://proceedings.mlr.press/v37/heinrich15.html>)
+  1. PSRO-Nash (NE) (<https://arxiv.org/abs/1711.00832>)
 
 **NOTE:** all learning-based algorithms are tested with [Ray 1.12.0](https://github.com/ray-project/ray) on Ubuntu 20.04 LTS.
 
