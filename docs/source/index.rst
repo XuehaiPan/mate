@@ -4,6 +4,7 @@ Welcome to the Multi-Agent Tracking Environment's documentation!
 Welcome to the documentation of ``MATE``, the *Multi-Agent Tracking Environment*.
 The source code of the ``MultiAgentTracking`` environment is hosted on GitHub.
 You can find it at `mate <https://github.com/XuehaiPan/mate>`_.
+For detailed description, please checkout our paper (`PDF <https://openreview.net/pdf?id=SyoUVEyzJbE>`_, :ref:`bibtex <Citation>`).
 
 This is an **asymmetric two-team zero-sum stochastic game** with *partial observations*, and each team has multiple agents (multiplayer).
 Intra-team communications are allowed, but inter-team communications are prohibited.
@@ -47,6 +48,28 @@ It is highly recommended to create a new isolated virtual environment for ``MATE
     wrappers
     modules/index
 
+
+------
+
+.. _Citation:
+
+Citation
+========
+
+If you find MATE useful, please consider citing:
+
+.. code-block:: bibtex
+
+    @inproceedings{pan2022mate,
+      title     = {{MATE}: Benchmarking Multi-Agent Reinforcement Learning in Distributed Target Coverage Control},
+      author    = {Xuehai Pan and Mickel Liu and Fangwei Zhong and Yaodong Yang and Song-Chun Zhu and Yizhou Wang},
+      booktitle = {Thirty-sixth Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
+      year      = {2022},
+      url       = {https://openreview.net/forum?id=SyoUVEyzJbE}
+    }
+
+
+------
 
 Indices and tables
 ==================

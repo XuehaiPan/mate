@@ -2,7 +2,7 @@
 
 <!-- markdownlint-disable html -->
 
-This repo contains the source code of `MATE`, the _**M**ulti-**A**gent **T**racking **E**nvironment_. The full documentation can be found at <https://mate-gym.readthedocs.io>. The full list of implemented agents can be found in section [Implemented Algorithms](#implemented-algorithms).
+This repo contains the source code of `MATE`, the _**M**ulti-**A**gent **T**racking **E**nvironment_. The full documentation can be found at <https://mate-gym.readthedocs.io>. The full list of implemented agents can be found in section [Implemented Algorithms](#implemented-algorithms). For detailed description, please checkout our paper ([PDF](https://openreview.net/pdf?id=SyoUVEyzJbE), [bibtex](#citation)).
 
 This is an **asymmetric two-team zero-sum stochastic game** with _partial observations_, and each team has multiple agents (multiplayer). Intra-team communications are allowed, but inter-team communications are prohibited. It is **cooperative** among teammates, but it is **competitive** among teams (opponents).
 
@@ -363,6 +363,20 @@ The following algorithms are implemented in [`examples`](examples):
   1. PSRO-Nash (NE) (<https://arxiv.org/abs/1711.00832>)
 
 **NOTE:** all learning-based algorithms are tested with [Ray 1.12.0](https://github.com/ray-project/ray) on Ubuntu 20.04 LTS.
+
+## Citation
+
+If you find MATE useful, please consider citing:
+
+```bibtex
+@inproceedings{pan2022mate,
+  title     = {{MATE}: Benchmarking Multi-Agent Reinforcement Learning in Distributed Target Coverage Control},
+  author    = {Xuehai Pan and Mickel Liu and Fangwei Zhong and Yaodong Yang and Song-Chun Zhu and Yizhou Wang},
+  booktitle = {Thirty-sixth Conference on Neural Information Processing Systems Datasets and Benchmarks Track},
+  year      = {2022},
+  url       = {https://openreview.net/forum?id=SyoUVEyzJbE}
+}
+```
 
 ## License
 
