@@ -390,7 +390,7 @@ def main():  # pylint: disable=missing-function-docstring,too-many-branches,too-
         wrappers.append(mate.WrapperSpec(mate.SharedFieldOfView, team=args.shared_field_of_view))
     if args.no_communication != 'none':
         wrappers.append(mate.WrapperSpec(mate.NoCommunication, team=args.no_communication))
-    if args.render_communication is not None:
+    if args.render_communication is not None and args.render_communication:
         wrappers.append(
             mate.WrapperSpec(mate.RenderCommunication, duration=args.render_communication)
         )
