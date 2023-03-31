@@ -251,14 +251,14 @@ def parse_arguments():  # pylint: disable=missing-function-docstring
         type=load_entry,
         metavar='ENTRY',
         default='mate:GreedyCameraAgent',
-        help='Entry point of camera agent class.\n' '(default: %(default)s)',
+        help='Entry point of camera agent class.\n(default: %(default)s)',
     )
     agent_parser.add_argument(
         '--target-agent',
         type=load_entry,
         metavar='ENTRY',
         default='mate:GreedyTargetAgent',
-        help='Entry point of target agent class.\n' '(default: %(default)s)',
+        help='Entry point of target agent class.\n(default: %(default)s)',
     )
     agent_parser.add_argument(
         '--camera-kwargs',

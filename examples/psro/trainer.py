@@ -28,7 +28,6 @@ class PlayerTrainer:
         group=None,
         **kwargs,
     ):
-
         self.iteration = iteration
         self.player = player
         self.name = f'PSRO-{base_experiment.name}'

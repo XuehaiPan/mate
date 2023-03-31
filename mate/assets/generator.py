@@ -222,7 +222,7 @@ def generate(
     max_distance_numpy = SCALE * float(max_distance_numpy)
     locations_numpy = (SCALE * np.asarray(locations_numpy, dtype=np.float64)).tolist()
 
-    with open(BASE_CONFIG_FILE, mode='rt', encoding='UTF-8') as file:
+    with open(BASE_CONFIG_FILE, encoding='UTF-8') as file:
         config = yaml.load(file, yaml.SafeLoader)
 
     config['name'] = f'MultiAgentTracking({num_cameras}v{num_targets}, {num_obstacles})'
@@ -268,7 +268,7 @@ def generate(
     except OSError:
         pass
 
-    with open(path, mode='wt') as file:
+    with open(path, mode='w') as file:
         if file_ext == '.json':
             json.dump(config, file, indent=2)
         else:

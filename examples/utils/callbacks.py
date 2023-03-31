@@ -227,9 +227,7 @@ class CustomMetricCallback(RLlibCallbackBase):
         collector = episode.user_data['collector']
         custom_metrics = collector.collect()
         for key in tuple(custom_metrics):
-            if key.endswith('reward') and not (
-                key.startswith('episode') or key.startswith('reward_coefficient')
-            ):
+            if key.endswith('reward') and not key.startswith(('episode', 'reward_coefficient')):
                 custom_metrics[f'episode_{key}'] = float(np.sum(collector.data[key]))
 
         episode.custom_metrics.update(custom_metrics)
@@ -330,7 +328,7 @@ class WandbLoggerCallback(WandbLoggerCallbackBase):
         if api_key_file:
             if api_key:
                 raise ValueError('Both WandB `api_key_file` and `api_key` set.')
-            with open(api_key_file, mode='rt', encoding='UTF-8') as file:
+            with open(api_key_file, encoding='UTF-8') as file:
                 api_key = file.readline().strip()
         if api_key:
             os.environ[cls.WANDB_ENV_VAR] = api_key

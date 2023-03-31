@@ -39,7 +39,6 @@ class MoreTrainingInformation(gym.Wrapper, metaclass=WrapperMeta):
             Tuple[List[dict], List[dict]],
         ],
     ]:
-
         (
             (camera_joint_observation, target_joint_observation),
             _,

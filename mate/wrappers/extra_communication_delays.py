@@ -52,7 +52,7 @@ class ExtraCommunicationDelays(gym.Wrapper, metaclass=WrapperMeta):
 
         messages = list(messages)
         assert (
-            len(set(m.team for m in messages)) <= 1
+            len({m.team for m in messages}) <= 1
         ), f'All messages must be from the same team. Got messages = {messages}.'
 
         for message in messages:

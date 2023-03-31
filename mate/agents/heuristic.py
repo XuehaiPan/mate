@@ -18,7 +18,7 @@ class HeuristicCameraAgent(CameraAgentBase):  # pylint: disable=too-many-instanc
     """Heuristic Camera Agent
 
     Greedily maximizes the heuristic scores as much as possible.
-    All agents send their observation to the centralized controller (agent 0).
+    All agents send their observations to the centralized controller (agent 0).
     Then the central controller sends the goal state (camera pose) to each agent.
     """
 

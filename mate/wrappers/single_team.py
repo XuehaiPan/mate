@@ -154,7 +154,6 @@ class SingleTeamHelper(gym.Wrapper, metaclass=WrapperMeta):
             Tuple[List[dict], List[dict]],
         ],
     ]:
-
         return self.swap(*self.env.step(self.swap(*action)))
 
     # pylint: disable-next=missing-function-docstring
@@ -167,7 +166,7 @@ class SingleTeamHelper(gym.Wrapper, metaclass=WrapperMeta):
         if len(items) == 2:
             return items[1], items[0]
         return tuple(
-            map(lambda item: (item[1], item[0]) if isinstance(item, (tuple, list)) else item, items)
+            (item[1], item[0]) if isinstance(item, (tuple, list)) else item for item in items
         )
 
 
@@ -177,7 +176,6 @@ class SingleTeamMultiAgent(SingleTeamHelper):
     """
 
     def __init__(self, env: BaseEnvironmentType, team: Team, opponent_agent: AgentType) -> None:
-
         super().__init__(env, team=team)
 
         self.action_space = env.action_space.spaces[team.value]
@@ -249,7 +247,6 @@ class SingleTeamMultiAgent(SingleTeamHelper):
         Tuple[np.ndarray, float, bool, List[dict]],
         Tuple[np.ndarray, List[float], List[bool], List[dict]],
     ]:
-
         opponent_joint_action = group_step(
             self.env, self.opponent_agents, self.opponent_joint_observation, self.opponent_infos
         )
@@ -288,7 +285,6 @@ class MultiCamera(SingleTeamMultiAgent):
     """
 
     def __init__(self, env: BaseEnvironmentType, target_agent: TargetAgentBase) -> None:
-
         assert isinstance(target_agent, TargetAgentBase), (
             f'You should provide an instance of target agent. '
             f'Got target_agent = {target_agent!r}.'
@@ -303,7 +299,6 @@ class MultiTarget(SingleTeamMultiAgent):
     """
 
     def __init__(self, env: BaseEnvironmentType, camera_agent: CameraAgentBase) -> None:
-
         assert isinstance(camera_agent, CameraAgentBase), (
             f'You should provide an instance of camera agent. '
             f'Got camera_agent = {camera_agent!r}.'
@@ -324,7 +319,6 @@ class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-insta
         teammate_agent: AgentType,
         opponent_agent: AgentType,
     ) -> None:
-
         super().__init__(env, team=team)
 
         self.action_space = self.teammate_action_space
@@ -421,7 +415,6 @@ class SingleTeamSingleAgent(SingleTeamHelper):  # pylint: disable=too-many-insta
         return self.env.receive_messages(agent_id=agent_id, agent=agent)
 
     def step(self, action: Union[int, np.ndarray]) -> Tuple[np.ndarray, float, bool, dict]:
-
         teammate_joint_observation = list(
             itertools.chain(
                 self.joint_observation[: self.index], self.joint_observation[self.index + 1 :]
@@ -488,7 +481,6 @@ class SingleCamera(SingleTeamSingleAgent):
         other_camera_agent: CameraAgentBase,
         target_agent: TargetAgentBase,
     ) -> None:
-
         assert isinstance(other_camera_agent, CameraAgentBase), (
             f'You should provide an instance of camera agent. '
             f'Got other_camera_agent = {other_camera_agent!r}.'

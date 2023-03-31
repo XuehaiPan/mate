@@ -21,7 +21,7 @@ def timeout_context(duration):
     signal.alarm(0)
 
 
-class Solver(object, metaclass=abc.ABCMeta):
+class Solver(metaclass=abc.ABCMeta):
     NAME: str
     ABBREVIATED_NAME: str
 

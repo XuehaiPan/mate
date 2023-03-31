@@ -146,12 +146,12 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
         self.index = int(np.round(observation[3]).astype(np.int64))
         self.agent_id = f'{self.TEAM.name.lower()}_{self.index}'
 
-        kwargs = dict(
-            team=self.TEAM,
-            num_cameras=self.num_cameras,
-            num_targets=self.num_targets,
-            num_obstacles=self.num_obstacles,
-        )
+        kwargs = {
+            'team': self.TEAM,
+            'num_cameras': self.num_cameras,
+            'num_targets': self.num_targets,
+            'num_obstacles': self.num_obstacles,
+        }
         self.observation_indices = consts.observation_indices_of(**kwargs)
         self.observation_slices = consts.observation_slices_of(**kwargs)
         self.observation_dim = self.observation_indices[-1]
@@ -278,7 +278,7 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         return self.act(observation, info, deterministic=deterministic)
 
-    def send_requests(self) -> Iterable[Message]:  # pylint: disable=no-self-use
+    def send_requests(self) -> Iterable[Message]:
         r"""Prepare messages to communicate with other agents in the same team.
         This function will be called after observe() but before receive_requests().
 
@@ -326,7 +326,7 @@ class AgentBase(ABC):  # pylint: disable=too-many-instance-attributes,too-many-p
 
         self.last_requests = tuple(messages)
 
-    def send_responses(self) -> Iterable[Message]:  # pylint: disable=no-self-use
+    def send_responses(self) -> Iterable[Message]:
         r"""Prepare messages to communicate with other agents in the same team.
         This function will be called after receive_requests().
 

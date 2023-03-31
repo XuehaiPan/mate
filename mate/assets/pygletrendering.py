@@ -12,9 +12,8 @@ import numpy as np
 from gym import error
 
 
-if 'Apple' in sys.version:
-    if 'DYLD_FALLBACK_LIBRARY_PATH' in os.environ:
-        os.environ['DYLD_FALLBACK_LIBRARY_PATH'] += ':/usr/lib'
+if 'Apple' in sys.version and 'DYLD_FALLBACK_LIBRARY_PATH' in os.environ:
+    os.environ['DYLD_FALLBACK_LIBRARY_PATH'] += ':/usr/lib'
 
 try:
     import pyglet

@@ -35,6 +35,7 @@ if TYPE_CHECKING:
         RescaledObservation,
     )
 
+# pylint: disable=invalid-name
 AgentType = TypeVar('AgentType', CameraAgentBase, TargetAgentBase)
 BaseEnvironmentType = TypeVar(
     'BaseEnvironmentType',
@@ -51,6 +52,7 @@ BaseEnvironmentType = TypeVar(
 )
 MultiAgentEnvironmentType = Union[BaseEnvironmentType, 'MultiCamera', 'MultiTarget']
 MateEnvironmentType = MultiAgentTracking
+# pylint: enable=invalid-name
 
 
 def assert_mate_environment(env):  # pylint: disable=missing-function-docstring
@@ -58,9 +60,9 @@ def assert_mate_environment(env):  # pylint: disable=missing-function-docstring
         f'The unwrapped environment should be the Multi-Agent Tracking Environment. '
         f'Got env.unwrapped = {env.unwrapped}.'
     )
-    assert isinstance(env, MultiAgentTracking), (
-        f"You should wrap mate's built-in wrappers before yours. " f'Got env = {env}.'
-    )
+    assert isinstance(
+        env, MultiAgentTracking
+    ), f"You should wrap mate's built-in wrappers before yours. Got env = {env}."
 
 
 def assert_multi_agent_environment(env):  # pylint: disable=missing-function-docstring

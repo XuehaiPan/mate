@@ -125,7 +125,6 @@ class AuxiliaryTargetRewards(gym.Wrapper, metaclass=WrapperMeta):
         ],
         Tuple[np.ndarray, List[float], List[bool], List[dict]],
     ]:
-
         observations, rewards, dones, infos = self.env.step(action)
 
         if self.single_team:

@@ -92,7 +92,7 @@ therefore
 
     The left inequality only holds for the target can transport the cargo to the destination, otherwise the maximum value of the total reward is :math:`- B_t = \min \sum_{k_s < k < k_f} \left[ r_t^{(\text{coverage})} (k) + r_t^{(\text{transport})} (k) \right]` (sum excluding :math:`k = k_f`).
 
-The hyperparameters :math:`(\alpha, \beta)` are choosen as:
+The hyperparameters :math:`(\alpha, \beta)` are chosen as:
 
 .. math::
 

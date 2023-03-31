@@ -139,7 +139,7 @@ def read_config(
         if isinstance(config_or_path, str) and os.path.exists(config_or_path):
             file_ext = os.path.splitext(config_or_path)[1].lower()
             if file_ext in ('.json', '.yaml', '.yml'):
-                with open(config_or_path, mode='rt', encoding='UTF-8') as file:
+                with open(config_or_path, encoding='UTF-8') as file:
                     if file_ext == '.json':
                         import json  # pylint: disable=import-outside-toplevel
 
@@ -180,9 +180,9 @@ def read_config(
         config.setdefault(entity, {})
         subconfig = config[entity]
         if 'location' in subconfig:
-            subconfig['location'] = list(
-                map(lambda array: np.asarray(array, dtype=np.float64), subconfig['location'])
-            )
+            subconfig['location'] = [
+                np.asarray(array, dtype=np.float64) for array in subconfig['location']
+            ]
         if 'location_random_range' in subconfig:
             subconfig['location_random_range'] = list(
                 map(to_box, subconfig['location_random_range'])
@@ -336,10 +336,7 @@ class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
         """
 
         if config is None:
-            if len(kwargs) > 0:
-                config = {}
-            else:
-                config = self.DEFAULT_CONFIG_FILE
+            config = {} if len(kwargs) > 0 else self.DEFAULT_CONFIG_FILE
 
         config = read_config(config, **kwargs)
 
@@ -586,7 +583,7 @@ class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
 
         seed = self.np_random.randint(np.iinfo(int).max)
 
-        self.__init__(config=config)
+        self.__init__(config=config)  # pylint: disable=unnecessary-dunder-call
 
         self.seed(seed)
 
@@ -634,32 +631,32 @@ class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
             self.episode_step <= self.max_episode_steps and self.awaiting_cargo_counts.any()
         )
 
-        common_info = dict(
-            coverage_rate=self.coverage_rate,
-            real_coverage_rate=self.real_coverage_rate,
-            mean_transport_rate=self.mean_transport_rate,
-            num_delivered_cargoes=self.num_delivered_cargoes,
-        )
+        common_info = {
+            'coverage_rate': self.coverage_rate,
+            'real_coverage_rate': self.real_coverage_rate,
+            'mean_transport_rate': self.mean_transport_rate,
+            'num_delivered_cargoes': self.num_delivered_cargoes,
+        }
         camera_infos = [
-            dict(
-                raw_reward=camera_team_reward,
-                normalized_raw_reward=normalized_camera_team_reward,
-                messages=self.camera_message_buffer[c],
-                out_communication_edges=self.camera_communication_edges[c, :].sum(),
-                in_communication_edges=self.camera_communication_edges[:, c].sum(),
+            {
+                'raw_reward': camera_team_reward,
+                'normalized_raw_reward': normalized_camera_team_reward,
+                'messages': self.camera_message_buffer[c],
+                'out_communication_edges': self.camera_communication_edges[c, :].sum(),
+                'in_communication_edges': self.camera_communication_edges[:, c].sum(),
                 **common_info,
-            )
+            }
             for c in range(self.num_cameras)
         ]
         target_infos = [
-            dict(
-                raw_reward=target_team_reward,
-                normalized_raw_reward=normalized_target_team_reward,
-                messages=self.target_message_buffer[t],
-                out_communication_edges=self.target_communication_edges[t, :].sum(),
-                in_communication_edges=self.target_communication_edges[:, t].sum(),
+            {
+                'raw_reward': target_team_reward,
+                'normalized_raw_reward': normalized_target_team_reward,
+                'messages': self.target_message_buffer[t],
+                'out_communication_edges': self.target_communication_edges[t, :].sum(),
+                'in_communication_edges': self.target_communication_edges[:, t].sum(),
                 **common_info,
-            )
+            }
             for t in range(self.num_targets)
         ]
         self.camera_total_communication_edges += self.camera_communication_edges
@@ -848,7 +845,7 @@ class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
 
         messages = list(messages)
         assert (
-            len(set(m.team for m in messages)) <= 1
+            len({m.team for m in messages}) <= 1
         ), f'All messages must be from the same team. Got messages = {messages}.'
 
         for message in self.route_messages(messages):
@@ -1134,12 +1131,12 @@ class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
                 camera.orientation + camera.viewing_angle / 2.0,
             )
             rhos = rhos.clip(min=camera.radius, max=camera.sight_range)
-            vertexes = polar2cartesian(rhos, phis).transpose()
-            vertexes = camera.location + np.concatenate([[[0.0, 0.0]], vertexes, [[0.0, 0.0]]])
+            vertices = polar2cartesian(rhos, phis).transpose()
+            vertices = camera.location + np.concatenate([[[0.0, 0.0]], vertices, [[0.0, 0.0]]])
             boundary = polar2cartesian(camera.sight_range, phis).transpose()
             boundary = camera.location + np.concatenate([[[0.0, 0.0]], boundary, [[0.0, 0.0]]])
 
-            polygon = rendering.make_polygon(vertexes, filled=True)
+            polygon = rendering.make_polygon(vertices, filled=True)
             sector = rendering.make_polygon(boundary, filled=True)
             if self.camera_target_view_mask[c].any():
                 polygon.set_color(0.0, 0.6, 0.0, 0.25)
@@ -1179,6 +1176,7 @@ class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
         for callback in itertools.chain(self.render_callbacks.values(), onetime_callbacks):
             callback(self, mode)
 
+        # pylint: disable-next=superfluous-parens
         return self.viewer.render(return_rgb_array=(mode == 'rgb_array'))
 
     def add_render_callback(
@@ -1356,7 +1354,6 @@ class MultiAgentTracking(gym.Env, EzPickle, metaclass=EnvMeta):
         self._update_view()
 
     def _update_view(self) -> None:  # pylint: disable=too-many-branches
-
         self._state = None
         self.camera_target_view_mask.fill(False)
         self.target_camera_view_mask.fill(False)

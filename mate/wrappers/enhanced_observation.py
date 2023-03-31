@@ -67,7 +67,7 @@ class EnhancedObservation(gym.ObservationWrapper, metaclass=WrapperMeta):
 
         self.env.load_config(config=config)
 
-        self.__init__(self.env, team=self.team)
+        self.__init__(self.env, team=self.team)  # pylint: disable=unnecessary-dunder-call
 
     def observation(
         self, observation: Tuple[np.ndarray, np.ndarray]

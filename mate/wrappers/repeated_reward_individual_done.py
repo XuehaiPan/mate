@@ -47,7 +47,6 @@ class RepeatedRewardIndividualDone(gym.Wrapper, metaclass=WrapperMeta):
         ],
         Tuple[np.ndarray, List[float], List[bool], List[dict]],
     ]:
-
         observation, reward, done, info = self.env.step(action)
 
         if self.target_done_at_destination:

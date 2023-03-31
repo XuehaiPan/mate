@@ -147,7 +147,6 @@ def evaluate(
     num_episodes=100,
     horizon=+np.inf,
 ):
-
     m, n = len(camera_agent_pool), len(target_agent_pool)
     payoff_matrices = expand_size(
         payoff_matrices, shape=(2, m, n), fill_value=np.nan, dtype=np.float64
@@ -165,15 +164,15 @@ def evaluate(
     pending = {}
     for c, t in np.argwhere(np.isnan(payoff_matrices).any(axis=0)):
         for e in range(num_episodes):
-            pending[((c, t), e)] = dict(
-                entry=(c, t),
-                camera_agent=camera_agent_remote_get(c),
-                target_agent=target_agent_remote_get(t),
-                env_config=env_config,
-                deterministic=deterministic,
-                seed=e,
-                horizon=horizon,
-            )
+            pending[((c, t), e)] = {
+                'entry': (c, t),
+                'camera_agent': camera_agent_remote_get(c),
+                'target_agent': target_agent_remote_get(t),
+                'env_config': env_config,
+                'deterministic': deterministic,
+                'seed': e,
+                'horizon': horizon,
+            }
 
     not_ready = []
     evaluators = {}

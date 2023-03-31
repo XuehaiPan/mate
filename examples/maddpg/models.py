@@ -114,17 +114,17 @@ class MADDPGModel(DDPGTorchModel, nn.Module):
         else:
             self.policy_model = policy_model
 
-        q_model_kwargs = dict(
-            name='critic',
-            input_dim=self.global_state_action_dim,
-            hidden_dims=self.critic_hiddens,
-            output_dim=1,
-            layer_norm=add_layer_norm,
-            activation=self.critic_hidden_activation,
-            output_activation=None,
-            hidden_weight_initializer=orthogonal_initializer(scale=1.0),
-            output_weight_initializer=orthogonal_initializer(scale=1.0),
-        )
+        q_model_kwargs = {
+            'name': 'critic',
+            'input_dim': self.global_state_action_dim,
+            'hidden_dims': self.critic_hiddens,
+            'output_dim': 1,
+            'layer_norm': add_layer_norm,
+            'activation': self.critic_hidden_activation,
+            'output_activation': None,
+            'hidden_weight_initializer': orthogonal_initializer(scale=1.0),
+            'output_weight_initializer': orthogonal_initializer(scale=1.0),
+        }
         self.q_model = SimpleMLP(**q_model_kwargs)
         if twin_q:
             q_model_kwargs.update(name='twin_critic')

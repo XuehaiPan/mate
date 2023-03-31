@@ -33,7 +33,6 @@ class Entity(ABC):
     action_space = None
 
     def __init__(self, location=None, location_random_range=None, radius=1.0):
-
         assert (location is None, location_random_range is None).count(True) == 1, (
             f'You should specify either a fixed location or a random range for the location. '
             f'Got (location, location_random_range) = {(location, location_random_range)}.'
@@ -121,7 +120,6 @@ class Obstacle(Entity):
         radius_random_range=None,
         transmittance=DEFAULT_OBSTACLE_TRANSMITTANCE,
     ):
-
         assert (radius is None, radius_random_range is None).count(True) == 1, (
             f'You should specify either a fixed radius or a random range for the radius. '
             f'Got (radius, radius_random_range) = {(radius, radius_random_range)}.'
@@ -193,7 +191,6 @@ class Sensor(Entity):
     def __init__(
         self, location=None, location_random_range=None, radius=1.0, sight_range=DEFAULT_SIGHT_RANGE
     ):
-
         assert sight_range > 0.0, (
             f'The argument `sight_range` should be a positive number. '
             f'Got sight_range = {sight_range}.'
@@ -267,7 +264,6 @@ class Camera(Sensor, Obstacle):  # pylint: disable=too-many-instance-attributes
         rotation_step=DEFAULT_CAMERA_ROTATION_STEP,
         zooming_step=DEFAULT_CAMERA_ZOOMING_STEP,
     ):
-
         assert 0.0 < min_viewing_angle <= consts.MAX_CAMERA_VIEWING_ANGLE, (
             f'The argument `min_viewing_angle` within the range of (0.0, {consts.MAX_CAMERA_VIEWING_ANGLE}]. '
             f'Got min_viewing_angle = {min_viewing_angle}.'
@@ -535,7 +531,7 @@ class Camera(Sensor, Obstacle):  # pylint: disable=too-many-instance-attributes
             rhos = rhos_all[mask]
         else:
             mask1 = np.logical_and(angle_left < phis_all, phis_all <= +180.0)
-            mask2 = np.logical_and(-180.0 < phis_all, phis_all < angle_right - 360.0)
+            mask2 = np.logical_and(phis_all > -180.0, phis_all < angle_right - 360.0)
             phis = np.concatenate([phis_all[mask1], phis_all[mask2]])
             rhos = np.concatenate([rhos_all[mask1], rhos_all[mask2]])
 
@@ -576,7 +572,6 @@ class Target(Sensor):  # pylint: disable=too-many-instance-attributes
         sight_range=DEFAULT_SIGHT_RANGE,
         step_size=DEFAULT_TARGET_STEP_SIZE,
     ):
-
         assert step_size > 0.0, (
             f'The argument `step_size` should be a positive number. '
             f'Got step_size = {step_size}.'
@@ -691,6 +686,6 @@ class Target(Sensor):  # pylint: disable=too-many-instance-attributes
             cls.OBSTACLES.add(obstacle)
 
     @classmethod
-    def clear_obstacles(cls):
+    def clear_obstacles(cls):  # pylint: disable=arguments-differ
         cls.SPATIAL_HASHMAP.clear()
         cls.OBSTACLES.clear()

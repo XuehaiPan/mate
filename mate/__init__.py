@@ -49,55 +49,55 @@ gym.register(id='MATE-v0', entry_point=make_environment)
 gym.register(
     id='MATE-4v2-9-v0',
     entry_point=make_environment,
-    kwargs=dict(config=(ASSETS_DIR / 'MATE-4v2-9.yaml')),
+    kwargs={'config': (ASSETS_DIR / 'MATE-4v2-9.yaml')},
 )
 
 gym.register(
     id='MATE-4v2-0-v0',
     entry_point=make_environment,
-    kwargs=dict(config=(ASSETS_DIR / 'MATE-4v2-0.yaml')),
+    kwargs={'config': (ASSETS_DIR / 'MATE-4v2-0.yaml')},
 )
 
 gym.register(
     id='MATE-4v4-9-v0',
     entry_point=make_environment,
-    kwargs=dict(config=(ASSETS_DIR / 'MATE-4v4-9.yaml')),
+    kwargs={'config': (ASSETS_DIR / 'MATE-4v4-9.yaml')},
 )
 
 gym.register(
     id='MATE-4v4-0-v0',
     entry_point=make_environment,
-    kwargs=dict(config=(ASSETS_DIR / 'MATE-4v4-0.yaml')),
+    kwargs={'config': (ASSETS_DIR / 'MATE-4v4-0.yaml')},
 )
 
 gym.register(
     id='MATE-4v8-9-v0',
     entry_point=make_environment,
-    kwargs=dict(config=(ASSETS_DIR / 'MATE-4v8-9.yaml')),
+    kwargs={'config': (ASSETS_DIR / 'MATE-4v8-9.yaml')},
 )
 
 gym.register(
     id='MATE-4v8-0-v0',
     entry_point=make_environment,
-    kwargs=dict(config=(ASSETS_DIR / 'MATE-4v8-0.yaml')),
+    kwargs={'config': (ASSETS_DIR / 'MATE-4v8-0.yaml')},
 )
 
 gym.register(
     id='MATE-8v8-9-v0',
     entry_point=make_environment,
-    kwargs=dict(config=(ASSETS_DIR / 'MATE-8v8-9.yaml')),
+    kwargs={'config': (ASSETS_DIR / 'MATE-8v8-9.yaml')},
 )
 
 gym.register(
     id='MATE-8v8-0-v0',
     entry_point=make_environment,
-    kwargs=dict(config=(ASSETS_DIR / 'MATE-8v8-0.yaml')),
+    kwargs={'config': (ASSETS_DIR / 'MATE-8v8-0.yaml')},
 )
 
 gym.register(
     id='MATE-Navigation-v0',
     entry_point=make_environment,
-    kwargs=dict(config=(ASSETS_DIR / 'MATE-Navigation.yaml')),
+    kwargs={'config': (ASSETS_DIR / 'MATE-Navigation.yaml')},
 )
 
 

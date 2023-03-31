@@ -85,7 +85,6 @@ class RLlibPolicyMixIn(AgentBase):
     DEFAULT_CONFIG = None
 
     def __init__(self, config, checkpoint_path, make_env, seed=None):
-
         super().__init__(seed=seed)
 
         self.checkpoint_path, self.worker, self.params = load_checkpoint(checkpoint_path)

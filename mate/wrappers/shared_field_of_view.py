@@ -68,7 +68,7 @@ class SharedFieldOfView(gym.ObservationWrapper, metaclass=WrapperMeta):
 
         self.env.load_config(config=config)
 
-        self.__init__(self.env, team=self.team)
+        self.__init__(self.env, team=self.team)  # pylint: disable=unnecessary-dunder-call
 
     # pylint: disable-next=too-many-locals
     def observation(

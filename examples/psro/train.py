@@ -200,12 +200,12 @@ def train(
                 ),
             }
 
-            train_kwargs = dict(
-                num_workers=num_workers,
-                num_gpus=num_gpus,
-                num_envs_per_worker=num_envs_per_worker,
-                seed=seed,
-            )
+            train_kwargs = {
+                'num_workers': num_workers,
+                'num_gpus': num_gpus,
+                'num_envs_per_worker': num_envs_per_worker,
+                'seed': seed,
+            }
             not_ready = [
                 camera_trainer.result.remote(skip_train_if_exists=True, **train_kwargs),
                 target_trainer.result.remote(skip_train_if_exists=True, **train_kwargs),

@@ -76,7 +76,6 @@ class RescaledObservation(gym.ObservationWrapper, metaclass=WrapperMeta):
     def observation(
         self, observation: Union[Tuple[np.ndarray, np.ndarray], np.ndarray]
     ) -> Union[Tuple[np.ndarray, np.ndarray], np.ndarray]:
-
         if self.single_team:
             return self.rescale_observation(observation, team=self.team)
 

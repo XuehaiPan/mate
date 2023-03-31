@@ -31,7 +31,7 @@ class RenderCommunication(gym.Wrapper, metaclass=WrapperMeta):
 
         self.env.load_config(config=config)
 
-        self.__init__(self.env, duration=self.duration)
+        self.__init__(self.env, duration=self.duration)  # pylint: disable=unnecessary-dunder-call
 
     def reset(self, **kwargs) -> Tuple[np.ndarray, np.ndarray]:
         self.camera_comm_matrix.fill(0)
@@ -44,7 +44,6 @@ class RenderCommunication(gym.Wrapper, metaclass=WrapperMeta):
     ) -> Tuple[
         Tuple[np.ndarray, np.ndarray], Tuple[float, float], bool, Tuple[List[dict], List[dict]]
     ]:
-
         self.camera_comm_matrix = np.maximum(self.camera_comm_matrix - 1, 0, dtype=np.int64)
         self.target_comm_matrix = np.maximum(self.target_comm_matrix - 1, 0, dtype=np.int64)
         comm_matrices = (self.camera_comm_matrix, self.target_comm_matrix)

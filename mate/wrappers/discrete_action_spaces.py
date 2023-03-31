@@ -11,7 +11,7 @@ from mate.wrappers.typing import BaseEnvironmentType, WrapperMeta, assert_base_e
 
 
 def indices_of_nearest_grid_point(continuous: np.ndarray, grid: np.ndarray) -> np.ndarray:
-    """Convert continuous values to the indices of the nearest gird points."""
+    """Convert continuous values to the indices of the nearest grid points."""
 
     diff = continuous - grid[:, np.newaxis, :]
     indices = np.argmin(np.linalg.norm(diff, axis=-1), axis=0)
@@ -54,7 +54,7 @@ class DiscreteCamera(gym.ActionWrapper, metaclass=WrapperMeta):
 
         self.env.load_config(config=config)
 
-        self.__init__(self.env, levels=self.levels)
+        self.__init__(self.env, levels=self.levels)  # pylint: disable=unnecessary-dunder-call
 
     def action(self, action: Tuple[np.ndarray, np.ndarray]) -> Tuple[np.ndarray, np.ndarray]:
         """Convert joint action of cameras from discrete to continuous."""
@@ -152,7 +152,7 @@ class DiscreteTarget(gym.ActionWrapper, metaclass=WrapperMeta):
 
         self.env.load_config(config=config)
 
-        self.__init__(self.env, levels=self.levels)
+        self.__init__(self.env, levels=self.levels)  # pylint: disable=unnecessary-dunder-call
 
     def reset(self, **kwargs) -> Tuple[np.ndarray, np.ndarray]:
         joint_observations = self.env.reset(**kwargs)
