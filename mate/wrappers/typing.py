@@ -66,7 +66,7 @@ def assert_mate_environment(env):  # pylint: disable=missing-function-docstring
 
 
 def assert_multi_agent_environment(env):  # pylint: disable=missing-function-docstring
-    # pylint: disable=import-outside-toplevel
+    # pylint: disable-next=import-outside-toplevel
     from mate.wrappers.single_team import SingleTeamSingleAgent
 
     assert_mate_environment(env)
@@ -76,7 +76,7 @@ def assert_multi_agent_environment(env):  # pylint: disable=missing-function-doc
 
 
 def assert_base_environment(env):  # pylint: disable=missing-function-docstring
-    # pylint: disable=import-outside-toplevel
+    # pylint: disable-next=import-outside-toplevel
     from mate.wrappers.single_team import SingleTeamHelper
 
     assert_multi_agent_environment(env)

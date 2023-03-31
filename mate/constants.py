@@ -163,8 +163,7 @@ TARGET_STATE_SPACE_PRIVATE = spaces.Box(
             [+np.inf] * NUM_WAREHOUSES,
             [1.0] * NUM_WAREHOUSES,
         ]
-    ).astype(np.float64)  # fmt: skip
-    ,
+    ).astype(np.float64),
     dtype=np.float64,
 )
 """The space object of target's private state."""
